@@ -9,6 +9,8 @@ router.get(
   passport.authenticate('google', {
     session: false,
     scope: ['profile', 'email', 'https://www.googleapis.com/auth/drive.readonly'],
+    accessType: 'offline',
+    prompt: 'consent',
   })
 );
 

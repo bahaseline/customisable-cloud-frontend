@@ -4,7 +4,7 @@ const JWT_EXPIRY = '7d';
 
 function signUserToken(user) {
   return jwt.sign(
-    { googleId: user.googleId, email: user.email, name: user.name },
+    { id: user.id, googleId: user.google_id, email: user.email, name: user.name },
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRY }
   );
