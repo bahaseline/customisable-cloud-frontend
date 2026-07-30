@@ -51,6 +51,16 @@ export default function FileViewerPage() {
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium text-[#3c4043] dark:text-[#e8eaed]">
           {file?.name || 'Loading…'}
         </h1>
+        {file && (
+          <a
+            href={file.webViewLink}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 rounded-full border border-[#dadce0] px-3 py-1 text-xs font-medium text-[#5f6368] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
+          >
+            Open in Drive
+          </a>
+        )}
       </header>
 
       <main className="flex-1 overflow-hidden">
