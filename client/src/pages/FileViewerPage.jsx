@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import apiClient from '../api/client';
 import { BackIcon } from '../components/icons';
+import Spinner from '../components/Spinner';
 
 function buildPreviewUrl(file) {
   switch (file.mimeType) {
@@ -55,7 +56,7 @@ export default function FileViewerPage() {
       <main className="flex-1 overflow-hidden">
         {loading && (
           <div className="flex h-full items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#dadce0] border-t-[#1a73e8] dark:border-[#3c4043]" />
+            <Spinner />
           </div>
         )}
 

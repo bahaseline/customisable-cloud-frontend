@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FullScreenCenter from '../components/FullScreenCenter';
+import Spinner from '../components/Spinner';
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
@@ -19,11 +21,11 @@ export default function AuthCallback() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#202124]">
+    <FullScreenCenter>
       <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-[#9aa0a6]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600 dark:border-[#3c4043]" />
+        <Spinner />
         <p className="text-sm">Signing you in…</p>
       </div>
-    </div>
+    </FullScreenCenter>
   );
 }

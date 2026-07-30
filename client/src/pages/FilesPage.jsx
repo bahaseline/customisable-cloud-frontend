@@ -7,6 +7,7 @@ import FileRow from '../components/FileRow';
 import FileGridItem from '../components/FileGridItem';
 import ViewToggle from '../components/ViewToggle';
 import ListItemRow from '../components/ListItemRow';
+import Spinner from '../components/Spinner';
 
 export default function FilesPage() {
   const { user, logout } = useAuth();
@@ -188,7 +189,7 @@ export default function FilesPage() {
 
           {loading && (
             <div className="flex items-center justify-center py-24">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#dadce0] border-t-[#1a73e8] dark:border-[#3c4043]" />
+              <Spinner />
             </div>
           )}
 
