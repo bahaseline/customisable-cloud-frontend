@@ -1,0 +1,98 @@
+import { useEffect, useRef, useState } from 'react';
+import { CheckIcon, ChevronDownIcon, FolderIcon, TagIcon } from './icons';
+
+function Row({ icon: Icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
+    >
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[#1a73e8] dark:text-[#8ab4f8]">
+        {active && <CheckIcon className="h-4 w-4" />}
+      </span>
+      <Icon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </button>
+  );
+}
+
+export default function FilterDropdown({ lists, activeListId, onSelectList, tags, activeTagId, onSelectTag }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const activeList = lists.find((l) => l.id === activeListId);
+  const activeTag = tags.find((t) => t.id === activeTagId);
+  const currentLabel = activeList ? activeList.name : activeTag ? activeTag.name : 'All Drive Files';
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 py-1.5 text-sm text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
+      >
+        <span className="max-w-[10rem] truncate">{currentLabel}</span>
+        <ChevronDownIcon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 max-h-96 w-64 overflow-y-auto rounded-lg border border-[#dadce0] bg-white py-1.5 shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]">
+          <Row
+            icon={FolderIcon}
+            label="All Drive Files"
+            active={!activeListId && !activeTagId}
+            onClick={() => {
+              onSelectList(null);
+              setOpen(false);
+            }}
+          />
+
+          {lists.length > 0 && (
+            <p className="mb-1 mt-3 px-3 text-xs font-medium uppercase tracking-wide text-[#80868b] dark:text-[#9aa0a6]">
+              Lists
+            </p>
+          )}
+          {lists.map((list) => (
+            <Row
+              key={list.id}
+              icon={FolderIcon}
+              label={list.name}
+              active={activeListId === list.id}
+              onClick={() => {
+                onSelectList(list.id);
+                setOpen(false);
+              }}
+            />
+          ))}
+
+          {tags.length > 0 && (
+            <p className="mb-1 mt-3 px-3 text-xs font-medium uppercase tracking-wide text-[#80868b] dark:text-[#9aa0a6]">
+              Labels
+            </p>
+          )}
+          {tags.map((tag) => (
+            <Row
+              key={tag.id}
+              icon={TagIcon}
+              label={tag.name}
+              active={activeTagId === tag.id}
+              onClick={() => {
+                onSelectTag(tag.id);
+                setOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

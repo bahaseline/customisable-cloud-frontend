@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { FolderIcon, TagIcon, TrashIcon } from './icons';
 
-export default function ListsSidebar({ lists, activeListId, onSelectList, onCreateList, onDeleteList }) {
+export default function ListsSidebar({
+  lists,
+  activeListId,
+  onSelectList,
+  onCreateList,
+  onDeleteList,
+  tags,
+  activeTagId,
+  onSelectTag,
+}) {
   const [creating, setCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
 
@@ -56,12 +65,14 @@ export default function ListsSidebar({ lists, activeListId, onSelectList, onCrea
         <button
           onClick={() => onSelectList(null)}
           className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-left text-sm ${
-            activeListId === null
+            activeListId === null && !activeTagId
               ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
               : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
           }`}
         >
-          <FolderIcon className={`h-5 w-5 shrink-0 ${activeListId === null ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`} />
+          <FolderIcon
+            className={`h-5 w-5 shrink-0 ${activeListId === null && !activeTagId ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
+          />
           All Drive Files
         </button>
 
@@ -97,6 +108,31 @@ export default function ListsSidebar({ lists, activeListId, onSelectList, onCrea
             </button>
           </div>
         ))}
+
+        {tags && tags.length > 0 && (
+          <p className="mb-1 mt-4 px-4 text-xs font-medium uppercase tracking-wide text-[#80868b] dark:text-[#9aa0a6]">
+            Labels
+          </p>
+        )}
+
+        {tags &&
+          tags.map((tag) => (
+            <button
+              key={tag.id}
+              onClick={() => onSelectTag(tag.id)}
+              className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-left text-sm ${
+                activeTagId === tag.id
+                  ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
+                  : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
+              }`}
+              title={tag.name}
+            >
+              <TagIcon
+                className={`h-5 w-5 shrink-0 ${activeTagId === tag.id ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
+              />
+              <span className="truncate">{tag.name}</span>
+            </button>
+          ))}
       </nav>
     </aside>
   );
