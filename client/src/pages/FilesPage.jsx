@@ -1,6 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
-import apiClient from '../api/client';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  useFiles,
+  useLists,
+  useListDetail,
+  useTags,
+  useTagItems,
+  useCreateList,
+  useDeleteList,
+  useAddToList,
+  useRemoveFromList,
+  useCreateTag,
+  useAttachTag,
+  useDetachTag,
+} from '../hooks/queries';
 import TopBar from '../components/TopBar';
 import ListsSidebar from '../components/ListsSidebar';
 import FileRow from '../components/FileRow';
@@ -8,148 +22,62 @@ import FileGridItem from '../components/FileGridItem';
 import ViewToggle from '../components/ViewToggle';
 import ListItemRow from '../components/ListItemRow';
 import Spinner from '../components/Spinner';
+import FilterDropdown from '../components/FilterDropdown';
 
 export default function FilesPage() {
   const { user, logout } = useAuth();
-  const [files, setFiles] = useState([]);
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [lists, setLists] = useState([]);
+
   const [activeListId, setActiveListId] = useState(null);
-  const [listItems, setListItems] = useState([]);
-  const [allTags, setAllTags] = useState([]);
+  const [activeTagId, setActiveTagId] = useState(null);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [view, setView] = useState(() => localStorage.getItem('fileView') || 'list');
+
+  const { files, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading: filesLoading, isError: filesError } =
+    useFiles();
+  const { lists } = useLists();
+  const { items: listItems, isLoading: listItemsLoading, isError: listItemsError } = useListDetail(activeListId);
+  const { tags: allTags } = useTags();
+  const { items: tagItems, isLoading: tagItemsLoading, isError: tagItemsError } = useTagItems(activeTagId);
+
+  const createList = useCreateList();
+  const deleteList = useDeleteList();
+  const addToList = useAddToList();
+  const removeFromList = useRemoveFromList(activeListId);
+  const createTag = useCreateTag();
+  const attachTag = useAttachTag(activeListId);
+  const detachTag = useDetachTag(activeListId);
 
   function handleViewChange(next) {
     setView(next);
     localStorage.setItem('fileView', next);
   }
 
-  useEffect(() => {
-    loadFiles();
-    loadLists();
-    loadTags();
-  }, []);
-
-  useEffect(() => {
-    if (activeListId) {
-      loadListItems(activeListId);
-    }
-  }, [activeListId]);
-
-  async function loadFiles() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.get('/api/files');
-      setFiles(res.data.files);
-      setNextPageToken(res.data.nextPageToken);
-    } catch (err) {
-      setError('Failed to load files from Google Drive.');
-    } finally {
-      setLoading(false);
-    }
+  function handleSelectList(listId) {
+    setActiveTagId(null);
+    setActiveListId(listId);
   }
 
-  async function loadMoreFiles() {
-    if (!nextPageToken) return;
-    setLoadingMore(true);
-    try {
-      const res = await apiClient.get('/api/files', { params: { pageToken: nextPageToken } });
-      setFiles((prev) => [...prev, ...res.data.files]);
-      setNextPageToken(res.data.nextPageToken);
-    } catch (err) {
-      setError('Failed to load more files.');
-    } finally {
-      setLoadingMore(false);
-    }
+  function handleSelectTag(tagId) {
+    setActiveListId(null);
+    setActiveTagId(tagId);
   }
 
-  async function loadLists() {
-    try {
-      const res = await apiClient.get('/api/lists');
-      setLists(res.data.lists);
-    } catch (err) {
-      // Lists sidebar just stays empty; files view still works.
-    }
-  }
-
-  async function loadListItems(listId) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.get(`/api/lists/${listId}`);
-      setListItems(res.data.items);
-    } catch (err) {
-      setError('Failed to load this list.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreateList(name) {
-    const res = await apiClient.post('/api/lists', { name });
-    setLists((prev) => [res.data.list, ...prev]);
-  }
-
-  async function handleDeleteList(listId) {
-    await apiClient.delete(`/api/lists/${listId}`);
-    setLists((prev) => prev.filter((l) => l.id !== listId));
+  function handleDeleteList(listId) {
+    deleteList.mutate(listId);
     if (activeListId === listId) {
       setActiveListId(null);
     }
   }
 
-  async function handleAddToList(listId, file) {
-    await apiClient.post(`/api/lists/${listId}/items`, {
-      driveFileId: file.id,
-      fileName: file.name,
-    });
-    if (activeListId === listId) {
-      loadListItems(listId);
-    }
-  }
-
-  async function handleRemoveFromList(itemId) {
-    await apiClient.delete(`/api/lists/${activeListId}/items/${itemId}`);
-    setListItems((prev) => prev.filter((item) => item.id !== itemId));
-  }
-
-  async function loadTags() {
-    try {
-      const res = await apiClient.get('/api/tags');
-      setAllTags(res.data.tags);
-    } catch (err) {
-      // Tag suggestions just stay empty; creating new tags still works.
-    }
-  }
-
-  async function handleCreateTag(name) {
-    const res = await apiClient.post('/api/tags', { name });
-    setAllTags((prev) => (prev.some((t) => t.id === res.data.tag.id) ? prev : [...prev, res.data.tag]));
-    return res.data.tag;
-  }
-
-  async function handleAttachTag(itemId, tag) {
-    await apiClient.post(`/api/lists/${activeListId}/items/${itemId}/tags`, { tagId: tag.id });
-    setListItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, tags: [...item.tags, tag] } : item))
-    );
-  }
-
-  async function handleDetachTag(itemId, tagId) {
-    await apiClient.delete(`/api/lists/${activeListId}/items/${itemId}/tags/${tagId}`);
-    setListItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, tags: item.tags.filter((t) => t.id !== tagId) } : item
-      )
-    );
-  }
-
   const activeList = lists.find((l) => l.id === activeListId);
+  const activeTag = allTags.find((t) => t.id === activeTagId);
+
+  const loading = activeListId ? listItemsLoading : activeTagId ? tagItemsLoading : filesLoading;
+  const error = activeListId
+    ? listItemsError && 'Failed to load this list.'
+    : activeTagId
+      ? tagItemsError && 'Failed to load items for this label.'
+      : filesError && 'Failed to load files from Google Drive.';
 
   const visibleFiles = useMemo(
     () => files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())),
@@ -158,6 +86,10 @@ export default function FilesPage() {
   const visibleListItems = useMemo(
     () => listItems.filter((i) => (i.fileName || '').toLowerCase().includes(search.toLowerCase())),
     [listItems, search]
+  );
+  const visibleTagItems = useMemo(
+    () => tagItems.filter((i) => (i.fileName || '').toLowerCase().includes(search.toLowerCase())),
+    [tagItems, search]
   );
 
   return (
@@ -168,17 +100,30 @@ export default function FilesPage() {
         <ListsSidebar
           lists={lists}
           activeListId={activeListId}
-          onSelectList={setActiveListId}
-          onCreateList={handleCreateList}
+          onSelectList={handleSelectList}
+          onCreateList={(name) => createList.mutate(name)}
           onDeleteList={handleDeleteList}
+          tags={allTags}
+          activeTagId={activeTagId}
+          onSelectTag={handleSelectTag}
         />
 
         <main className="flex-1 overflow-y-auto">
           <div className="flex items-center justify-between border-b border-[#e0e0e0] px-6 py-4 dark:border-[#3c4043]">
             <h1 className="text-lg font-normal text-[#202124] dark:text-[#e8eaed]">
-              {activeList ? activeList.name : 'All Drive Files'}
+              {activeList ? activeList.name : activeTag ? `Label: ${activeTag.name}` : 'All Drive Files'}
             </h1>
-            {!activeListId && <ViewToggle view={view} onChange={handleViewChange} />}
+            <div className="flex items-center gap-3">
+              <FilterDropdown
+                lists={lists}
+                activeListId={activeListId}
+                onSelectList={handleSelectList}
+                tags={allTags}
+                activeTagId={activeTagId}
+                onSelectTag={handleSelectTag}
+              />
+              {!activeListId && !activeTagId && <ViewToggle view={view} onChange={handleViewChange} />}
+            </div>
           </div>
 
           {error && (
@@ -193,7 +138,7 @@ export default function FilesPage() {
             </div>
           )}
 
-          {!loading && !activeListId && (
+          {!loading && !activeListId && !activeTagId && (
             <>
               {visibleFiles.length === 0 && !error && (
                 <p className="py-12 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">
@@ -208,7 +153,12 @@ export default function FilesPage() {
                     <span className="w-28 shrink-0 text-right">Last modified</span>
                   </div>
                   {visibleFiles.map((file) => (
-                    <FileRow key={file.id} file={file} lists={lists} onAddToList={handleAddToList} />
+                    <FileRow
+                      key={file.id}
+                      file={file}
+                      lists={lists}
+                      onAddToList={(listId, f) => addToList.mutate({ listId, file: f })}
+                    />
                   ))}
                 </>
               )}
@@ -216,19 +166,24 @@ export default function FilesPage() {
               {visibleFiles.length > 0 && view === 'grid' && (
                 <div className="grid grid-cols-2 gap-4 px-6 py-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {visibleFiles.map((file) => (
-                    <FileGridItem key={file.id} file={file} lists={lists} onAddToList={handleAddToList} />
+                    <FileGridItem
+                      key={file.id}
+                      file={file}
+                      lists={lists}
+                      onAddToList={(listId, f) => addToList.mutate({ listId, file: f })}
+                    />
                   ))}
                 </div>
               )}
 
-              {nextPageToken && !search && (
+              {hasNextPage && !search && (
                 <div className="flex justify-center py-4">
                   <button
-                    onClick={loadMoreFiles}
-                    disabled={loadingMore}
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
                     className="rounded-full border border-[#dadce0] px-5 py-2 text-sm font-medium text-[#1a73e8] hover:bg-[#eaf1fb] disabled:opacity-50 dark:border-[#5f6368] dark:hover:bg-[#3c4043]"
                   >
-                    {loadingMore ? 'Loading…' : 'Load more files'}
+                    {isFetchingNextPage ? 'Loading…' : 'Load more files'}
                   </button>
                 </div>
               )}
@@ -247,12 +202,39 @@ export default function FilesPage() {
                   key={item.id}
                   item={item}
                   allTags={allTags}
-                  onRemove={handleRemoveFromList}
-                  onAttachTag={handleAttachTag}
-                  onDetachTag={handleDetachTag}
-                  onCreateTag={handleCreateTag}
+                  onRemove={(itemId) => removeFromList.mutate(itemId)}
+                  onAttachTag={(itemId, tag) => attachTag.mutateAsync({ itemId, tag })}
+                  onDetachTag={(itemId, tagId) => detachTag.mutate({ itemId, tagId })}
+                  onCreateTag={(name) => createTag.mutateAsync(name)}
                 />
               ))}
+            </div>
+          )}
+
+          {!loading && activeTagId && visibleTagItems.length === 0 && !error && (
+            <p className="py-12 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">
+              {search ? 'No files match your search.' : 'No files carry this label yet.'}
+            </p>
+          )}
+          {!loading && activeTagId && visibleTagItems.length > 0 && (
+            <div>
+              {visibleTagItems.map((item) => {
+                const parentList = lists.find((l) => l.id === item.listId);
+                return (
+                  <Link
+                    key={item.id}
+                    to={`/file/${item.driveFileId}`}
+                    className="flex items-center gap-4 border-b border-[#f1f3f4] px-4 py-2.5 hover:bg-[#f8f9fa] dark:border-[#3c4043] dark:hover:bg-[#292a2d]"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-[#3c4043] dark:text-[#e8eaed]">
+                      {item.fileName}
+                    </span>
+                    {parentList && (
+                      <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">{parentList.name}</span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </main>

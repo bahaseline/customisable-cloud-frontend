@@ -1,28 +1,27 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(!!token);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    apiClient
-      .get('/api/me')
-      .then((res) => setUser(res.data.user))
-      .catch(() => {
+  const { data: user, isLoading: loading } = useQuery({
+    queryKey: ['me', token],
+    queryFn: async () => {
+      try {
+        return (await apiClient.get('/api/me')).data.user;
+      } catch (err) {
         localStorage.removeItem('token');
         setToken(null);
-      })
-      .finally(() => setLoading(false));
-  }, [token]);
+        throw err;
+      }
+    },
+    enabled: !!token,
+    retry: false,
+  });
 
   function login(newToken) {
     localStorage.setItem('token', newToken);
@@ -32,11 +31,11 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem('token');
     setToken(null);
-    setUser(null);
+    queryClient.clear();
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user: user || null, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

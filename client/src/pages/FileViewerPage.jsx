@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import apiClient from '../api/client';
+import { useFile } from '../hooks/queries';
 import { BackIcon } from '../components/icons';
 import Spinner from '../components/Spinner';
 
@@ -21,19 +20,8 @@ function buildPreviewUrl(file) {
 
 export default function FileViewerPage() {
   const { fileId } = useParams();
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    apiClient
-      .get(`/api/files/${fileId}`)
-      .then((res) => setFile(res.data.file))
-      .catch(() => setError('Could not load this file.'))
-      .finally(() => setLoading(false));
-  }, [fileId]);
+  const { data: file, isLoading: loading, isError } = useFile(fileId);
+  const error = isError ? 'Could not load this file.' : null;
 
   const previewUrl = file ? buildPreviewUrl(file) : null;
 
