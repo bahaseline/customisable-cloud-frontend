@@ -43,9 +43,12 @@ CREATE TABLE IF NOT EXISTS tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR NOT NULL,
+  color VARCHAR NOT NULL DEFAULT '#1a73e8',
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (owner_id, name)
 );
+
+ALTER TABLE tags ADD COLUMN IF NOT EXISTS color VARCHAR NOT NULL DEFAULT '#1a73e8';
 
 -- Many-to-many: a list item can have several tags, a tag can apply to several items
 CREATE TABLE IF NOT EXISTS list_item_tags (

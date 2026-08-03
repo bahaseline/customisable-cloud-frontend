@@ -77,3 +77,20 @@ test('duplicate tag names for the same user are rejected via upsert, not duplica
   const matching = all.body.tags.filter((t) => t.name === 'Duplicate');
   assert.equal(matching.length, 1);
 });
+
+test('tags can be created with a color and the color can be updated', async () => {
+  const created = await authed(request(app).post('/api/tags')).send({ name: 'Colorful', color: '#d93025' });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.tag.color, '#d93025');
+
+  const updated = await authed(
+    request(app).put(`/api/tags/${created.body.tag.id}`)
+  ).send({ color: '#188038' });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.tag.color, '#188038');
+
+  const invalid = await authed(
+    request(app).put(`/api/tags/${created.body.tag.id}`)
+  ).send({ color: 'not-a-color' });
+  assert.equal(invalid.status, 400);
+});

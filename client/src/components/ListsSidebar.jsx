@@ -1,5 +1,45 @@
 import { useState } from 'react';
-import { FolderIcon, TagIcon, TrashIcon } from './icons';
+import { FolderIcon, TrashIcon } from './icons';
+import { TAG_COLORS } from './tagColors';
+
+function TagDot({ tag, active, onChangeColor }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative shrink-0">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        aria-label={`Change color for ${tag.name}`}
+        className={`block h-3.5 w-3.5 rounded-full ${active ? 'ring-2 ring-offset-1 ring-[#1a73e8] dark:ring-offset-[#202124]' : ''}`}
+        style={{ backgroundColor: tag.color }}
+      />
+      {open && (
+        <div
+          className="absolute left-0 top-full z-20 mt-1 flex w-28 flex-wrap gap-1 rounded-lg border border-[#dadce0] bg-white p-2 shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {TAG_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
+                onChangeColor(tag.id, c);
+                setOpen(false);
+              }}
+              aria-label={`Use color ${c}`}
+              className="h-4 w-4 rounded-full"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      )}
+    </span>
+  );
+}
 
 export default function ListsSidebar({
   lists,
@@ -10,6 +50,7 @@ export default function ListsSidebar({
   tags,
   activeTagId,
   onSelectTag,
+  onChangeTagColor,
 }) {
   const [creating, setCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
@@ -96,7 +137,7 @@ export default function ListsSidebar({
               }`}
               title={list.name}
             >
-              <TagIcon className={`h-5 w-5 shrink-0 ${activeListId === list.id ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`} />
+              <FolderIcon className={`h-5 w-5 shrink-0 ${activeListId === list.id ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`} />
               <span className="truncate">{list.name}</span>
             </button>
             <button
@@ -127,9 +168,7 @@ export default function ListsSidebar({
               }`}
               title={tag.name}
             >
-              <TagIcon
-                className={`h-5 w-5 shrink-0 ${activeTagId === tag.id ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
-              />
+              <TagDot tag={tag} active={activeTagId === tag.id} onChangeColor={onChangeTagColor} />
               <span className="truncate">{tag.name}</span>
             </button>
           ))}

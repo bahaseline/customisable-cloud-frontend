@@ -94,7 +94,17 @@ export function useRemoveFromList(listId) {
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name) => apiClient.post('/api/tags', { name }).then((res) => res.data.tag),
+    mutationFn: ({ name, color }) =>
+      apiClient.post('/api/tags', { name, color }).then((res) => res.data.tag),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+  });
+}
+
+export function useUpdateTagColor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tagId, color }) =>
+      apiClient.put(`/api/tags/${tagId}`, { color }).then((res) => res.data.tag),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
   });
 }

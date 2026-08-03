@@ -8,6 +8,7 @@ router.use(requireAuth);
 
 router.post('/', tagsController.createTag);
 router.get('/', tagsController.getTags);
+router.put('/:tagId', tagsController.updateTagColor);
 router.delete('/:tagId', tagsController.deleteTag);
 
 module.exports = router;

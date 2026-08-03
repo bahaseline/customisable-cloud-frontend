@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { XIcon } from './icons';
+import { TAG_COLORS } from './tagColors';
 
 export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateTag }) {
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
+  const [color, setColor] = useState(TAG_COLORS[0]);
 
   const attachedIds = new Set(item.tags.map((t) => t.id));
   const suggestions = allTags.filter(
@@ -20,9 +22,10 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
   async function handleCreateAndAttach(e) {
     e.preventDefault();
     if (!query.trim()) return;
-    const tag = await onCreateTag(query.trim());
+    const tag = await onCreateTag(query.trim(), color);
     await onAttach(item.id, tag);
     setQuery('');
+    setColor(TAG_COLORS[0]);
     setAdding(false);
   }
 
@@ -31,13 +34,14 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
       {item.tags.map((tag) => (
         <span
           key={tag.id}
-          className="flex items-center gap-1 rounded-full bg-[#e8f0fe] px-2.5 py-0.5 text-xs text-[#1a73e8] dark:bg-[#3c4043] dark:text-[#8ab4f8]"
+          style={{ backgroundColor: `${tag.color}22`, color: tag.color }}
+          className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs"
         >
           {tag.name}
           <button
             onClick={() => onDetach(item.id, tag.id)}
             aria-label={`Remove tag ${tag.name}`}
-            className="rounded-full hover:text-[#d93025]"
+            className="rounded-full hover:opacity-70"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -56,23 +60,42 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
             className="w-28 rounded-full border border-[#dadce0] px-2.5 py-0.5 text-xs focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed]"
           />
           {query && (
-            <ul className="absolute left-0 top-full z-10 mt-1 w-40 overflow-hidden rounded-lg border border-[#dadce0] bg-white text-xs shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]">
+            <ul className="absolute left-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-lg border border-[#dadce0] bg-white text-xs shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]">
               {suggestions.map((tag) => (
                 <li key={tag.id}>
                   <button
                     type="button"
                     onMouseDown={() => handleSelect(tag)}
-                    className="block w-full px-3 py-1.5 text-left text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
                   >
-                    {tag.name}
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    <span className="truncate">{tag.name}</span>
                   </button>
                 </li>
               ))}
               {!exactMatch && (
-                <li>
+                <li className="px-3 py-2">
+                  <div className="mb-1.5 flex flex-wrap gap-1">
+                    {TAG_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setColor(c);
+                        }}
+                        aria-label={`Use color ${c}`}
+                        className={`h-4 w-4 rounded-full ${color === c ? 'ring-2 ring-offset-1 ring-[#3c4043] dark:ring-offset-[#292a2d]' : ''}`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
                   <button
                     type="submit"
-                    className="block w-full px-3 py-1.5 text-left font-medium text-[#1a73e8] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043]"
+                    className="block w-full text-left font-medium text-[#1a73e8] hover:underline"
                   >
                     Create "{query.trim()}"
                   </button>

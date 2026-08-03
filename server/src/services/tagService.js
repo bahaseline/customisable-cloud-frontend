@@ -1,22 +1,31 @@
 const { pool } = require('../db');
 
-async function createTag(ownerId, name) {
+async function createTag(ownerId, name, color) {
   const result = await pool.query(
-    `INSERT INTO tags (owner_id, name)
-     VALUES ($1, $2)
+    `INSERT INTO tags (owner_id, name, color)
+     VALUES ($1, $2, COALESCE($3, '#1a73e8'))
      ON CONFLICT (owner_id, name) DO UPDATE SET name = EXCLUDED.name
-     RETURNING id, owner_id, name, created_at`,
-    [ownerId, name]
+     RETURNING id, owner_id, name, color, created_at`,
+    [ownerId, name, color]
   );
   return result.rows[0];
 }
 
 async function getTagsForUser(ownerId) {
   const result = await pool.query(
-    'SELECT id, owner_id, name, created_at FROM tags WHERE owner_id = $1 ORDER BY name',
+    'SELECT id, owner_id, name, color, created_at FROM tags WHERE owner_id = $1 ORDER BY name',
     [ownerId]
   );
   return result.rows;
+}
+
+async function updateTagColor(tagId, ownerId, color) {
+  const result = await pool.query(
+    `UPDATE tags SET color = $3 WHERE id = $1 AND owner_id = $2
+     RETURNING id, owner_id, name, color, created_at`,
+    [tagId, ownerId, color]
+  );
+  return result.rows[0];
 }
 
 async function deleteTag(tagId, ownerId) {
@@ -29,7 +38,7 @@ async function deleteTag(tagId, ownerId) {
 
 async function getTagOwnedBy(tagId, ownerId) {
   const result = await pool.query(
-    'SELECT id, owner_id, name FROM tags WHERE id = $1 AND owner_id = $2',
+    'SELECT id, owner_id, name, color FROM tags WHERE id = $1 AND owner_id = $2',
     [tagId, ownerId]
   );
   return result.rows[0];
@@ -68,6 +77,7 @@ async function getItemsByTag(ownerId, tagId) {
 module.exports = {
   createTag,
   getTagsForUser,
+  updateTagColor,
   deleteTag,
   getTagOwnedBy,
   attachTag,

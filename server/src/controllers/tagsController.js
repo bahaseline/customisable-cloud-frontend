@@ -1,18 +1,35 @@
 const tagService = require('../services/tagService');
 const { keysToCamel } = require('../utils/camelCase');
 
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
 async function createTag(req, res) {
-  const { name } = req.body;
+  const { name, color } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'name is required' });
   }
-  const tag = await tagService.createTag(req.user.id, name);
+  if (color && !HEX_COLOR.test(color)) {
+    return res.status(400).json({ error: 'color must be a hex value like #1a73e8' });
+  }
+  const tag = await tagService.createTag(req.user.id, name, color);
   res.status(201).json({ tag: keysToCamel(tag) });
 }
 
 async function getTags(req, res) {
   const tags = await tagService.getTagsForUser(req.user.id);
   res.json({ tags: keysToCamel(tags) });
+}
+
+async function updateTagColor(req, res) {
+  const { color } = req.body;
+  if (!color || !HEX_COLOR.test(color)) {
+    return res.status(400).json({ error: 'color must be a hex value like #1a73e8' });
+  }
+  const tag = await tagService.updateTagColor(req.params.tagId, req.user.id, color);
+  if (!tag) {
+    return res.status(404).json({ error: 'Tag not found' });
+  }
+  res.json({ tag: keysToCamel(tag) });
 }
 
 async function deleteTag(req, res) {
@@ -61,4 +78,12 @@ async function detachTagFromItem(req, res) {
   res.status(204).end();
 }
 
-module.exports = { createTag, getTags, deleteTag, getItemsByTag, attachTagToItem, detachTagFromItem };
+module.exports = {
+  createTag,
+  getTags,
+  updateTagColor,
+  deleteTag,
+  getItemsByTag,
+  attachTagToItem,
+  detachTagFromItem,
+};

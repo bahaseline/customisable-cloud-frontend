@@ -10,7 +10,7 @@ function UserAvatar({ name, email }) {
   );
 }
 
-export default function TopBar({ search, onSearchChange, user, onLogout }) {
+export default function TopBar({ search, onSearchChange, user, onLogout, placeholder = 'Search in Drive' }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-6 border-b border-[#e0e0e0] bg-white px-4 dark:border-[#3c4043] dark:bg-[#202124]">
       <div className="flex w-52 shrink-0 items-center gap-2 pl-2">
@@ -26,7 +26,7 @@ export default function TopBar({ search, onSearchChange, user, onLogout }) {
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search in Drive"
+          placeholder={placeholder}
           className="w-full bg-transparent text-sm text-[#202124] placeholder:text-[#5f6368] focus:outline-none dark:text-[#e8eaed] dark:placeholder:text-[#9aa0a6]"
         />
       </div>

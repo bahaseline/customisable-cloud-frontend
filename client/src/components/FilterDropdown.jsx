@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, ChevronDownIcon, FolderIcon, TagIcon } from './icons';
+import { CheckIcon, ChevronDownIcon, FolderIcon } from './icons';
 
-function Row({ icon: Icon, label, active, onClick }) {
+function Row({ icon: Icon, dotColor, label, active, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -10,7 +10,11 @@ function Row({ icon: Icon, label, active, onClick }) {
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[#1a73e8] dark:text-[#8ab4f8]">
         {active && <CheckIcon className="h-4 w-4" />}
       </span>
-      <Icon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+      {dotColor ? (
+        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+      ) : (
+        <Icon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+      )}
       <span className="min-w-0 flex-1 truncate">{label}</span>
     </button>
   );
@@ -30,17 +34,13 @@ export default function FilterDropdown({ lists, activeListId, onSelectList, tags
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activeList = lists.find((l) => l.id === activeListId);
-  const activeTag = tags.find((t) => t.id === activeTagId);
-  const currentLabel = activeList ? activeList.name : activeTag ? activeTag.name : 'All Drive Files';
-
   return (
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((prev) => !prev)}
         className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 py-1.5 text-sm text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
       >
-        <span className="max-w-[10rem] truncate">{currentLabel}</span>
+        <span>Browse lists &amp; labels</span>
         <ChevronDownIcon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
       </button>
 
@@ -82,7 +82,7 @@ export default function FilterDropdown({ lists, activeListId, onSelectList, tags
           {tags.map((tag) => (
             <Row
               key={tag.id}
-              icon={TagIcon}
+              dotColor={tag.color}
               label={tag.name}
               active={activeTagId === tag.id}
               onClick={() => {

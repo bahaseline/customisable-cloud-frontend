@@ -68,7 +68,7 @@ async function getItemsForList(listId) {
   const result = await pool.query(
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at,
             COALESCE(
-              json_agg(json_build_object('id', t.id, 'name', t.name))
+              json_agg(json_build_object('id', t.id, 'name', t.name, 'color', t.color))
                 FILTER (WHERE t.id IS NOT NULL),
               '[]'
             ) AS tags
