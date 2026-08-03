@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import { CheckIcon, SearchIcon, XIcon } from './icons';
+import { useAddFileModal } from '../hooks/useAddFileModal';
 
 export default function AddFileModal({
   open,
@@ -11,24 +11,7 @@ export default function AddFileModal({
   isFetchingNextPage,
   onLoadMore,
 }) {
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (!open) setQuery('');
-  }, [open]);
-
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') onClose();
-    }
-    if (open) document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
-
-  const visibleFiles = useMemo(
-    () => files.filter((f) => f.name.toLowerCase().includes(query.toLowerCase())),
-    [files, query]
-  );
+  const { query, setQuery, visibleFiles } = useAddFileModal(open, onClose, files);
 
   if (!open) return null;
 

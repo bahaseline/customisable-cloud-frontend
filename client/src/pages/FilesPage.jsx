@@ -1,21 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  useFiles,
-  useLists,
-  useListDetail,
-  useTags,
-  useTagItems,
-  useCreateList,
-  useDeleteList,
-  useAddToList,
-  useRemoveFromList,
-  useCreateTag,
-  useUpdateTagColor,
-  useAttachTag,
-  useDetachTag,
-} from '../hooks/queries';
+import { useFilesPage } from '../hooks/useFilesPage';
 import TopBar from '../components/TopBar';
 import ListsSidebar from '../components/ListsSidebar';
 import FileRow from '../components/FileRow';
@@ -28,89 +13,42 @@ import AddFileModal from '../components/AddFileModal';
 
 export default function FilesPage() {
   const { user, logout } = useAuth();
-
-  const [activeListId, setActiveListId] = useState(() => localStorage.getItem('activeListId') || null);
-  const [activeTagId, setActiveTagId] = useState(() => localStorage.getItem('activeTagId') || null);
-  const [search, setSearch] = useState('');
-  const [view, setView] = useState(() => localStorage.getItem('fileView') || 'list');
-  const [addModalOpen, setAddModalOpen] = useState(false);
-
-  const { files, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading: filesLoading, isError: filesError } =
-    useFiles();
-  const { lists } = useLists();
-  const { items: listItems, isLoading: listItemsLoading, isError: listItemsError } = useListDetail(activeListId);
-  const { tags: allTags } = useTags();
-  const { items: tagItems, isLoading: tagItemsLoading, isError: tagItemsError } = useTagItems(activeTagId);
-
-  const createList = useCreateList();
-  const deleteList = useDeleteList();
-  const addToList = useAddToList();
-  const removeFromList = useRemoveFromList(activeListId);
-  const createTag = useCreateTag();
-  const updateTagColor = useUpdateTagColor();
-  const attachTag = useAttachTag(activeListId);
-  const detachTag = useDetachTag(activeListId);
-
-  useEffect(() => {
-    if (activeListId) localStorage.setItem('activeListId', activeListId);
-    else localStorage.removeItem('activeListId');
-  }, [activeListId]);
-
-  useEffect(() => {
-    if (activeTagId) localStorage.setItem('activeTagId', activeTagId);
-    else localStorage.removeItem('activeTagId');
-  }, [activeTagId]);
-
-  function handleViewChange(next) {
-    setView(next);
-    localStorage.setItem('fileView', next);
-  }
-
-  function handleSelectList(listId) {
-    setActiveTagId(null);
-    setActiveListId(listId);
-  }
-
-  function handleSelectTag(tagId) {
-    setActiveListId(null);
-    setActiveTagId(tagId);
-  }
-
-  function handleDeleteList(listId) {
-    deleteList.mutate(listId);
-    if (activeListId === listId) {
-      setActiveListId(null);
-    }
-  }
-
-  const activeList = lists.find((l) => l.id === activeListId);
-  const activeTag = allTags.find((t) => t.id === activeTagId);
-
-  const searchPlaceholder = activeList
-    ? `Search in "${activeList.name}"`
-    : activeTag
-      ? `Search files labeled "${activeTag.name}"`
-      : 'Search in Drive';
-
-  const loading = activeListId ? listItemsLoading : activeTagId ? tagItemsLoading : filesLoading;
-  const error = activeListId
-    ? listItemsError && 'Failed to load this list.'
-    : activeTagId
-      ? tagItemsError && 'Failed to load items for this label.'
-      : filesError && 'Failed to load files from Google Drive.';
-
-  const visibleFiles = useMemo(
-    () => files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())),
-    [files, search]
-  );
-  const visibleListItems = useMemo(
-    () => listItems.filter((i) => (i.fileName || '').toLowerCase().includes(search.toLowerCase())),
-    [listItems, search]
-  );
-  const visibleTagItems = useMemo(
-    () => tagItems.filter((i) => (i.fileName || '').toLowerCase().includes(search.toLowerCase())),
-    [tagItems, search]
-  );
+  const {
+    lists,
+    allTags,
+    activeListId,
+    activeTagId,
+    activeList,
+    activeTag,
+    search,
+    setSearch,
+    searchPlaceholder,
+    view,
+    addModalOpen,
+    setAddModalOpen,
+    files,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    visibleFiles,
+    visibleListItems,
+    visibleTagItems,
+    existingDriveFileIds,
+    loading,
+    error,
+    handleViewChange,
+    handleSelectList,
+    handleSelectTag,
+    handleDeleteList,
+    onCreateList,
+    onAddToList,
+    onAddFileToActiveList,
+    onRemoveFromList,
+    onCreateTag,
+    onChangeTagColor,
+    onAttachTag,
+    onDetachTag,
+  } = useFilesPage();
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-[#202124]">
@@ -127,12 +65,12 @@ export default function FilesPage() {
           lists={lists}
           activeListId={activeListId}
           onSelectList={handleSelectList}
-          onCreateList={(name) => createList.mutate(name)}
+          onCreateList={onCreateList}
           onDeleteList={handleDeleteList}
           tags={allTags}
           activeTagId={activeTagId}
           onSelectTag={handleSelectTag}
-          onChangeTagColor={(tagId, color) => updateTagColor.mutate({ tagId, color })}
+          onChangeTagColor={onChangeTagColor}
         />
 
         <main className="flex-1 overflow-y-auto">
@@ -189,12 +127,7 @@ export default function FilesPage() {
                     <span className="w-28 shrink-0 text-right">Last modified</span>
                   </div>
                   {visibleFiles.map((file) => (
-                    <FileRow
-                      key={file.id}
-                      file={file}
-                      lists={lists}
-                      onAddToList={(listId, f) => addToList.mutate({ listId, file: f })}
-                    />
+                    <FileRow key={file.id} file={file} lists={lists} onAddToList={onAddToList} />
                   ))}
                 </>
               )}
@@ -202,12 +135,7 @@ export default function FilesPage() {
               {visibleFiles.length > 0 && view === 'grid' && (
                 <div className="grid grid-cols-2 gap-4 px-6 py-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {visibleFiles.map((file) => (
-                    <FileGridItem
-                      key={file.id}
-                      file={file}
-                      lists={lists}
-                      onAddToList={(listId, f) => addToList.mutate({ listId, file: f })}
-                    />
+                    <FileGridItem key={file.id} file={file} lists={lists} onAddToList={onAddToList} />
                   ))}
                 </div>
               )}
@@ -238,10 +166,10 @@ export default function FilesPage() {
                   key={item.id}
                   item={item}
                   allTags={allTags}
-                  onRemove={(itemId) => removeFromList.mutate(itemId)}
-                  onAttachTag={(itemId, tag) => attachTag.mutateAsync({ itemId, tag })}
-                  onDetachTag={(itemId, tagId) => detachTag.mutate({ itemId, tagId })}
-                  onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
+                  onRemove={onRemoveFromList}
+                  onAttachTag={onAttachTag}
+                  onDetachTag={onDetachTag}
+                  onCreateTag={onCreateTag}
                 />
               ))}
             </div>
@@ -281,8 +209,8 @@ export default function FilesPage() {
           open={addModalOpen}
           onClose={() => setAddModalOpen(false)}
           files={files}
-          existingDriveFileIds={new Set(listItems.map((i) => i.driveFileId))}
-          onAdd={(file) => addToList.mutate({ listId: activeListId, file })}
+          existingDriveFileIds={existingDriveFileIds}
+          onAdd={onAddFileToActiveList}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
           onLoadMore={() => fetchNextPage()}

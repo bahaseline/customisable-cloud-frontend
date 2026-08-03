@@ -1,18 +1,15 @@
-import { useState } from 'react';
 import { FolderIcon, TrashIcon } from './icons';
 import { TAG_COLORS } from './tagColors';
+import { useListsSidebar, useTagDot } from '../hooks/useListsSidebar';
 
 function TagDot({ tag, active, onChangeColor }) {
-  const [open, setOpen] = useState(false);
+  const { open, toggle, pickColor } = useTagDot(tag, onChangeColor);
 
   return (
     <span className="relative shrink-0">
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
+        onClick={toggle}
         aria-label={`Change color for ${tag.name}`}
         className={`block h-3.5 w-3.5 rounded-full ${active ? 'ring-2 ring-offset-1 ring-[#1a73e8] dark:ring-offset-[#202124]' : ''}`}
         style={{ backgroundColor: tag.color }}
@@ -26,10 +23,7 @@ function TagDot({ tag, active, onChangeColor }) {
             <button
               key={c}
               type="button"
-              onClick={() => {
-                onChangeColor(tag.id, c);
-                setOpen(false);
-              }}
+              onClick={() => pickColor(c)}
               aria-label={`Use color ${c}`}
               className="h-4 w-4 rounded-full"
               style={{ backgroundColor: c }}
@@ -52,16 +46,8 @@ export default function ListsSidebar({
   onSelectTag,
   onChangeTagColor,
 }) {
-  const [creating, setCreating] = useState(false);
-  const [newListName, setNewListName] = useState('');
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!newListName.trim()) return;
-    onCreateList(newListName.trim());
-    setNewListName('');
-    setCreating(false);
-  }
+  const { creating, newListName, setNewListName, startCreating, cancelCreating, handleBlur, handleSubmit } =
+    useListsSidebar(onCreateList);
 
   return (
     <aside className="flex w-52 shrink-0 flex-col overflow-y-auto bg-white px-3 py-4 dark:bg-[#202124]">
@@ -73,13 +59,13 @@ export default function ListsSidebar({
             placeholder="List name"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
-            onBlur={() => !newListName && setCreating(false)}
+            onBlur={handleBlur}
             className="rounded border border-[#dadce0] px-2 py-1.5 text-sm focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed]"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setCreating(false)}
+              onClick={cancelCreating}
               className="rounded px-3 py-1 text-xs font-medium text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
             >
               Cancel
@@ -94,7 +80,7 @@ export default function ListsSidebar({
         </form>
       ) : (
         <button
-          onClick={() => setCreating(true)}
+          onClick={startCreating}
           className="mb-4 flex w-fit items-center gap-3 rounded-2xl bg-white px-5 py-3.5 text-sm font-medium text-[#3c4043] shadow-[0_1px_3px_1px_rgba(60,64,67,0.15),0_1px_2px_0_rgba(60,64,67,0.3)] hover:shadow-[0_1px_3px_1px_rgba(60,64,67,0.25),0_2px_4px_1px_rgba(60,64,67,0.2)] dark:bg-[#292a2d] dark:text-[#e8eaed]"
         >
           <span className="text-xl leading-none text-[#1a73e8]">+</span>

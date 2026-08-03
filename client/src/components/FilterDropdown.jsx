@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, ChevronDownIcon, FolderIcon } from './icons';
+import { useFilterDropdown } from '../hooks/useFilterDropdown';
 
 function Row({ icon: Icon, dotColor, label, active, onClick }) {
   return (
@@ -21,23 +21,12 @@ function Row({ icon: Icon, dotColor, label, active, onClick }) {
 }
 
 export default function FilterDropdown({ lists, activeListId, onSelectList, tags, activeTagId, onSelectTag }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const { open, containerRef, toggle, selectList, selectTag } = useFilterDropdown(onSelectList, onSelectTag);
 
   return (
     <div className="relative" ref={containerRef}>
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={toggle}
         className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 py-1.5 text-sm text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
       >
         <span>Browse lists &amp; labels</span>
@@ -50,10 +39,7 @@ export default function FilterDropdown({ lists, activeListId, onSelectList, tags
             icon={FolderIcon}
             label="All Drive Files"
             active={!activeListId && !activeTagId}
-            onClick={() => {
-              onSelectList(null);
-              setOpen(false);
-            }}
+            onClick={() => selectList(null)}
           />
 
           {lists.length > 0 && (
@@ -67,10 +53,7 @@ export default function FilterDropdown({ lists, activeListId, onSelectList, tags
               icon={FolderIcon}
               label={list.name}
               active={activeListId === list.id}
-              onClick={() => {
-                onSelectList(list.id);
-                setOpen(false);
-              }}
+              onClick={() => selectList(list.id)}
             />
           ))}
 
@@ -85,10 +68,7 @@ export default function FilterDropdown({ lists, activeListId, onSelectList, tags
               dotColor={tag.color}
               label={tag.name}
               active={activeTagId === tag.id}
-              onClick={() => {
-                onSelectTag(tag.id);
-                setOpen(false);
-              }}
+              onClick={() => selectTag(tag.id)}
             />
           ))}
         </div>

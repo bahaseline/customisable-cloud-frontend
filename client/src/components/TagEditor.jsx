@@ -1,33 +1,21 @@
-import { useState } from 'react';
 import { XIcon } from './icons';
 import { TAG_COLORS } from './tagColors';
+import { useTagEditor } from '../hooks/useTagEditor';
 
 export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateTag }) {
-  const [adding, setAdding] = useState(false);
-  const [query, setQuery] = useState('');
-  const [color, setColor] = useState(TAG_COLORS[0]);
-
-  const attachedIds = new Set(item.tags.map((t) => t.id));
-  const suggestions = allTags.filter(
-    (t) => !attachedIds.has(t.id) && t.name.toLowerCase().includes(query.toLowerCase())
-  );
-  const exactMatch = allTags.some((t) => t.name.toLowerCase() === query.trim().toLowerCase());
-
-  async function handleSelect(tag) {
-    await onAttach(item.id, tag);
-    setQuery('');
-    setAdding(false);
-  }
-
-  async function handleCreateAndAttach(e) {
-    e.preventDefault();
-    if (!query.trim()) return;
-    const tag = await onCreateTag(query.trim(), color);
-    await onAttach(item.id, tag);
-    setQuery('');
-    setColor(TAG_COLORS[0]);
-    setAdding(false);
-  }
+  const {
+    adding,
+    setAdding,
+    query,
+    setQuery,
+    color,
+    suggestions,
+    exactMatch,
+    handleSelect,
+    handleCreateAndAttach,
+    handlePickColor,
+    handleBlur,
+  } = useTagEditor(item, allTags, onAttach, onCreateTag);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -55,7 +43,7 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onBlur={() => setTimeout(() => setAdding(false), 150)}
+            onBlur={handleBlur}
             placeholder="Tag name…"
             className="w-28 rounded-full border border-[#dadce0] px-2.5 py-0.5 text-xs focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed]"
           />
@@ -83,10 +71,7 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
                       <button
                         key={c}
                         type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setColor(c);
-                        }}
+                        onMouseDown={(e) => handlePickColor(e, c)}
                         aria-label={`Use color ${c}`}
                         className={`h-4 w-4 rounded-full ${color === c ? 'ring-2 ring-offset-1 ring-[#3c4043] dark:ring-offset-[#292a2d]' : ''}`}
                         style={{ backgroundColor: c }}
