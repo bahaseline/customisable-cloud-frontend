@@ -15,9 +15,9 @@ export default function TopBar({ search, onSearchChange, user, onLogout, placeho
     <header className="flex h-16 shrink-0 items-center gap-6 border-b border-[#e0e0e0] bg-white px-4 dark:border-[#3c4043] dark:bg-[#202124]">
       <div className="flex w-52 shrink-0 items-center gap-2 pl-2">
         <div className="flex h-8 w-8 items-center justify-center rounded bg-[#1a73e8] text-sm font-bold text-white">
-          I1
+          D
         </div>
-        <span className="text-xl text-[#5f6368] dark:text-[#e8eaed]">ISTA1</span>
+        <span className="text-xl text-[#5f6368] dark:text-[#e8eaed]">Driveboard</span>
       </div>
 
       <div className="flex max-w-[720px] flex-1 items-center gap-3 rounded-full bg-[#eaf1fb] px-4 py-2.5 focus-within:bg-white focus-within:shadow-md dark:bg-[#292a2d] dark:focus-within:bg-[#2f3033]">

@@ -32,9 +32,9 @@ export default function LoginPage() {
       </div>
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50 dark:border-[#3c4043] dark:bg-[#292a2d] dark:shadow-none">
         <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-          I1
+          D
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-[#e8eaed]">ISTA1</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-[#e8eaed]">Driveboard</h1>
         <p className="mt-2 text-sm text-slate-500 dark:text-[#9aa0a6]">
           Your frequently-used Google Drive files, organised in one place.
         </p>
