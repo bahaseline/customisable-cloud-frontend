@@ -1,15 +1,11 @@
 const { google } = require('googleapis');
-const { pool } = require('../db');
+const { pool, queryOne } = require('../db');
 const { encrypt, decrypt } = require('./cryptoService');
 
 const PAGE_SIZE = 1000; // Drive API's maximum page size
 
 async function getUserTokens(userId) {
-  const result = await pool.query(
-    'SELECT access_token, refresh_token FROM users WHERE id = $1',
-    [userId]
-  );
-  return result.rows[0];
+  return queryOne('SELECT access_token, refresh_token FROM users WHERE id = $1', [userId]);
 }
 
 async function persistRefreshedTokens(userId, tokens) {

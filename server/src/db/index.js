@@ -2,4 +2,14 @@ const { Pool } = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-module.exports = { pool };
+async function queryRows(text, params) {
+  const result = await pool.query(text, params);
+  return result.rows;
+}
+
+async function queryOne(text, params) {
+  const rows = await queryRows(text, params);
+  return rows[0];
+}
+
+module.exports = { pool, queryRows, queryOne };

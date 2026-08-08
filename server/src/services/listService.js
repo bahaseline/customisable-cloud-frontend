@@ -1,17 +1,16 @@
-const { pool } = require('../db');
+const { queryOne, queryRows } = require('../db');
 
 async function createList(ownerId, name) {
-  const result = await pool.query(
+  return queryOne(
     `INSERT INTO custom_lists (owner_id, name)
      VALUES ($1, $2)
      RETURNING id, owner_id, name, is_shared, created_at`,
     [ownerId, name]
   );
-  return result.rows[0];
 }
 
 async function getListsForUser(userId) {
-  const result = await pool.query(
+  return queryRows(
     `SELECT DISTINCT l.id, l.owner_id, l.name, l.is_shared, l.created_at
      FROM custom_lists l
      LEFT JOIN list_members m ON m.list_id = l.id
@@ -19,53 +18,47 @@ async function getListsForUser(userId) {
      ORDER BY l.created_at DESC`,
     [userId]
   );
-  return result.rows;
 }
 
 async function getListOwnedBy(listId, ownerId) {
-  const result = await pool.query(
+  return queryOne(
     'SELECT id, owner_id, name, is_shared, created_at FROM custom_lists WHERE id = $1 AND owner_id = $2',
     [listId, ownerId]
   );
-  return result.rows[0];
 }
 
 async function deleteList(listId, ownerId) {
-  const result = await pool.query(
-    'DELETE FROM custom_lists WHERE id = $1 AND owner_id = $2 RETURNING id',
-    [listId, ownerId]
-  );
-  return result.rows[0];
+  return queryOne('DELETE FROM custom_lists WHERE id = $1 AND owner_id = $2 RETURNING id', [
+    listId,
+    ownerId,
+  ]);
 }
 
 async function addItem(listId, { driveFileId, fileName, addedBy }) {
-  const result = await pool.query(
+  return queryOne(
     `INSERT INTO list_items (list_id, drive_file_id, file_name, added_by)
      VALUES ($1, $2, $3, $4)
      RETURNING id, list_id, drive_file_id, file_name, added_by, added_at`,
     [listId, driveFileId, fileName, addedBy]
   );
-  return result.rows[0];
 }
 
 async function removeItem(listId, itemId) {
-  const result = await pool.query(
-    'DELETE FROM list_items WHERE id = $1 AND list_id = $2 RETURNING id',
-    [itemId, listId]
-  );
-  return result.rows[0];
+  return queryOne('DELETE FROM list_items WHERE id = $1 AND list_id = $2 RETURNING id', [
+    itemId,
+    listId,
+  ]);
 }
 
 async function getItemInList(listId, itemId) {
-  const result = await pool.query(
+  return queryOne(
     'SELECT id, list_id, drive_file_id, file_name FROM list_items WHERE id = $1 AND list_id = $2',
     [itemId, listId]
   );
-  return result.rows[0];
 }
 
 async function getItemsForList(listId) {
-  const result = await pool.query(
+  return queryRows(
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at,
             COALESCE(
               json_agg(json_build_object('id', t.id, 'name', t.name, 'color', t.color))
@@ -80,7 +73,6 @@ async function getItemsForList(listId) {
      ORDER BY li.added_at DESC`,
     [listId]
   );
-  return result.rows;
 }
 
 module.exports = {
