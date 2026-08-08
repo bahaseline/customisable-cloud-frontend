@@ -1,4 +1,5 @@
 import { CheckIcon, SearchIcon, XIcon } from './icons';
+import EmptyState from './EmptyState';
 import { useAddFileModal } from '../hooks/useAddFileModal';
 
 export default function AddFileModal({
@@ -41,9 +42,7 @@ export default function AddFileModal({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {visibleFiles.length === 0 && (
-            <p className="py-10 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">No files match your search.</p>
-          )}
+          {visibleFiles.length === 0 && <EmptyState message="No files match your search." className="py-10" />}
           {visibleFiles.map((file) => {
             const added = existingDriveFileIds.has(file.id);
             return (

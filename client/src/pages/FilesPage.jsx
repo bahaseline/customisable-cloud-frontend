@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useFilesPage } from '../hooks/useFilesPage';
 import TopBar from '../components/TopBar';
@@ -7,6 +6,8 @@ import FileRow from '../components/FileRow';
 import FileGridItem from '../components/FileGridItem';
 import ViewToggle from '../components/ViewToggle';
 import ListItemRow from '../components/ListItemRow';
+import TagItemRow from '../components/TagItemRow';
+import EmptyState from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import FilterDropdown from '../components/FilterDropdown';
 import AddFileModal from '../components/AddFileModal';
@@ -115,9 +116,9 @@ export default function FilesPage() {
           {!loading && !activeListId && !activeTagId && (
             <>
               {visibleFiles.length === 0 && !error && (
-                <p className="py-12 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">
-                  {search ? 'No files match your search.' : 'No files found in your Google Drive.'}
-                </p>
+                <EmptyState
+                  message={search ? 'No files match your search.' : 'No files found in your Google Drive.'}
+                />
               )}
 
               {visibleFiles.length > 0 && view === 'list' && (
@@ -155,9 +156,11 @@ export default function FilesPage() {
           )}
 
           {!loading && activeListId && visibleListItems.length === 0 && !error && (
-            <p className="py-12 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">
-              {search ? 'No files match your search.' : 'No files in this list yet. Add some from "All Drive Files".'}
-            </p>
+            <EmptyState
+              message={
+                search ? 'No files match your search.' : 'No files in this list yet. Add some from "All Drive Files".'
+              }
+            />
           )}
           {!loading && activeListId && visibleListItems.length > 0 && (
             <div>
@@ -176,29 +179,17 @@ export default function FilesPage() {
           )}
 
           {!loading && activeTagId && visibleTagItems.length === 0 && !error && (
-            <p className="py-12 text-center text-sm text-[#5f6368] dark:text-[#9aa0a6]">
-              {search ? 'No files match your search.' : 'No files carry this label yet.'}
-            </p>
+            <EmptyState message={search ? 'No files match your search.' : 'No files carry this label yet.'} />
           )}
           {!loading && activeTagId && visibleTagItems.length > 0 && (
             <div>
-              {visibleTagItems.map((item) => {
-                const parentList = lists.find((l) => l.id === item.listId);
-                return (
-                  <Link
-                    key={item.id}
-                    to={`/file/${item.driveFileId}`}
-                    className="flex items-center gap-4 border-b border-[#f1f3f4] px-4 py-2.5 hover:bg-[#f8f9fa] dark:border-[#3c4043] dark:hover:bg-[#292a2d]"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm text-[#3c4043] dark:text-[#e8eaed]">
-                      {item.fileName}
-                    </span>
-                    {parentList && (
-                      <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">{parentList.name}</span>
-                    )}
-                  </Link>
-                );
-              })}
+              {visibleTagItems.map((item) => (
+                <TagItemRow
+                  key={item.id}
+                  item={item}
+                  parentListName={lists.find((l) => l.id === item.listId)?.name}
+                />
+              ))}
             </div>
           )}
         </main>

@@ -1,5 +1,6 @@
 import { FolderIcon, TrashIcon } from './icons';
 import { TAG_COLORS } from './tagColors';
+import ColorSwatchPicker from './ColorSwatchPicker';
 import { useListsSidebar, useTagDot } from '../hooks/useListsSidebar';
 
 function TagDot({ tag, active, onChangeColor }) {
@@ -16,19 +17,14 @@ function TagDot({ tag, active, onChangeColor }) {
       />
       {open && (
         <div
-          className="absolute left-0 top-full z-20 mt-1 flex w-28 flex-wrap gap-1 rounded-lg border border-[#dadce0] bg-white p-2 shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]"
+          className="absolute left-0 top-full z-20 mt-1 w-28 rounded-lg border border-[#dadce0] bg-white p-2 shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]"
           onClick={(e) => e.stopPropagation()}
         >
-          {TAG_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => pickColor(c)}
-              aria-label={`Use color ${c}`}
-              className="h-4 w-4 rounded-full"
-              style={{ backgroundColor: c }}
-            />
-          ))}
+          <ColorSwatchPicker
+            colors={TAG_COLORS}
+            selectedColor={tag.color}
+            onPick={(_e, c) => pickColor(c)}
+          />
         </div>
       )}
     </span>
