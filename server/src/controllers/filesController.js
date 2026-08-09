@@ -1,28 +1,26 @@
-const { listFiles, getFile } = require('../services/driveService');
+const { listFiles, getFile, getFileContent } = require('../services/driveService');
 
 async function getFiles(req, res) {
-  try {
-    const { files, nextPageToken } = await listFiles(req.user.id, {
-      pageToken: req.query.pageToken,
-    });
-    res.json({ files, nextPageToken });
-  } catch (err) {
-    console.error(err);
-    res.status(502).json({ error: 'Failed to fetch files from Google Drive' });
-  }
+  const { files, nextPageToken } = await listFiles(req.user.id, {
+    pageToken: req.query.pageToken,
+  });
+  res.json({ files, nextPageToken });
 }
 
 async function getFileById(req, res) {
-  try {
-    const file = await getFile(req.user.id, req.params.fileId);
-    res.json({ file });
-  } catch (err) {
-    if (err.code === 404) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    console.error(err);
-    res.status(502).json({ error: 'Failed to fetch file from Google Drive' });
-  }
+  const file = await getFile(req.user.id, req.params.fileId);
+  res.json({ file });
 }
 
-module.exports = { getFiles, getFileById };
+async function streamFileContent(req, res, next) {
+  const { stream, mimeType, name } = await getFileContent(req.user.id, req.params.fileId);
+
+  res.setHeader('Content-Type', mimeType);
+  // RFC 5987 encoding
+  res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(name)}`);
+
+  stream.on('error', next);
+  stream.pipe(res);
+}
+
+module.exports = { getFiles, getFileById, streamFileContent };
