@@ -11,6 +11,8 @@ import EmptyState from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import FilterDropdown from '../components/FilterDropdown';
 import AddFileModal from '../components/AddFileModal';
+import ShareListModal from '../components/ShareListModal';
+import { ACCESS_HINTS } from '../constants/roles';
 
 export default function FilesPage() {
   const { user, logout } = useAuth();
@@ -27,6 +29,11 @@ export default function FilesPage() {
     view,
     addModalOpen,
     setAddModalOpen,
+    canEdit,
+    isOwner,
+    shareList,
+    shareListId,
+    setShareListId,
     files,
     hasNextPage,
     isFetchingNextPage,
@@ -35,6 +42,7 @@ export default function FilesPage() {
     visibleListItems,
     visibleTagItems,
     existingDriveFileIds,
+    filterDropdown,
     loading,
     error,
     handleViewChange,
@@ -68,6 +76,7 @@ export default function FilesPage() {
           onSelectList={handleSelectList}
           onCreateList={onCreateList}
           onDeleteList={handleDeleteList}
+          onShareList={setShareListId}
           tags={allTags}
           activeTagId={activeTagId}
           onSelectTag={handleSelectTag}
@@ -76,11 +85,26 @@ export default function FilesPage() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="flex items-center justify-between border-b border-[#e0e0e0] px-6 py-4 dark:border-[#3c4043]">
-            <h1 className="text-lg font-normal text-[#202124] dark:text-[#e8eaed]">
-              {activeList ? activeList.name : activeTag ? `Label: ${activeTag.name}` : 'All Drive Files'}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="truncate text-lg font-normal text-[#202124] dark:text-[#e8eaed]">
+                {activeList ? activeList.name : activeTag ? `Label: ${activeTag.name}` : 'All Drive Files'}
+              </h1>
+              {activeList && !isOwner && (
+                <span className="shrink-0 rounded-full bg-[#f1f3f4] px-2 py-0.5 text-xs text-[#5f6368] dark:bg-[#3c4043] dark:text-[#9aa0a6]">
+                  Shared with you · {ACCESS_HINTS[activeList.role]}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-3">
-              {activeListId && (
+              {activeListId && isOwner && (
+                <button
+                  onClick={() => setShareListId(activeListId)}
+                  className="rounded-full border border-[#dadce0] px-3 py-1.5 text-sm font-medium text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
+                >
+                  Share
+                </button>
+              )}
+              {activeListId && canEdit && (
                 <button
                   onClick={() => setAddModalOpen(true)}
                   className="flex items-center gap-1.5 rounded-full bg-[#1a73e8] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1765cc]"
@@ -89,14 +113,7 @@ export default function FilesPage() {
                   Add file
                 </button>
               )}
-              <FilterDropdown
-                lists={lists}
-                activeListId={activeListId}
-                onSelectList={handleSelectList}
-                tags={allTags}
-                activeTagId={activeTagId}
-                onSelectTag={handleSelectTag}
-              />
+              <FilterDropdown buttonLabel={filterDropdown.buttonLabel} groups={filterDropdown.groups} />
               {!activeListId && !activeTagId && <ViewToggle view={view} onChange={handleViewChange} />}
             </div>
           </div>
@@ -169,6 +186,7 @@ export default function FilesPage() {
                   key={item.id}
                   item={item}
                   allTags={allTags}
+                  canEdit={canEdit}
                   onRemove={onRemoveFromList}
                   onAttachTag={onAttachTag}
                   onDetachTag={onDetachTag}
@@ -195,7 +213,14 @@ export default function FilesPage() {
         </main>
       </div>
 
-      {activeListId && (
+      <ShareListModal
+        open={!!shareListId}
+        onClose={() => setShareListId(null)}
+        listId={shareListId}
+        listName={shareList?.name}
+      />
+
+      {activeListId && canEdit && (
         <AddFileModal
           open={addModalOpen}
           onClose={() => setAddModalOpen(false)}

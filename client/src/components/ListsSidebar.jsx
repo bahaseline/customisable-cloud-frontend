@@ -1,7 +1,8 @@
-import { FolderIcon, TrashIcon } from './icons';
+import { FolderIcon, TrashIcon, ShareIcon } from './icons';
 import { TAG_COLORS } from './tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import { useListsSidebar, useTagDot } from '../hooks/useListsSidebar';
+import { isOwner } from '../constants/roles';
 
 function TagDot({ tag, active, onChangeColor }) {
   const { open, toggle, pickColor } = useTagDot(tag, onChangeColor);
@@ -37,6 +38,7 @@ export default function ListsSidebar({
   onSelectList,
   onCreateList,
   onDeleteList,
+  onShareList,
   tags,
   activeTagId,
   onSelectTag,
@@ -121,14 +123,28 @@ export default function ListsSidebar({
             >
               <FolderIcon className={`h-5 w-5 shrink-0 ${activeListId === list.id ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`} />
               <span className="truncate">{list.name}</span>
+              {list.isShared && (
+                <ShareIcon className="h-3 w-3 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+              )}
             </button>
-            <button
-              onClick={() => onDeleteList(list.id)}
-              aria-label={`Delete ${list.name}`}
-              className="shrink-0 rounded-full p-1.5 text-[#9aa0a6] opacity-0 hover:bg-[#e0e0e0] hover:text-[#d93025] group-hover:opacity-100 dark:hover:bg-[#5f6368]"
-            >
-              <TrashIcon className="h-3.5 w-3.5" />
-            </button>
+            {isOwner(list.role) && (
+              <>
+                <button
+                  onClick={() => onShareList(list.id)}
+                  aria-label={`Share ${list.name}`}
+                  className="shrink-0 rounded-full p-1.5 text-[#9aa0a6] opacity-0 hover:bg-[#e0e0e0] hover:text-[#1a73e8] group-hover:opacity-100 dark:hover:bg-[#5f6368]"
+                >
+                  <ShareIcon className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => onDeleteList(list.id)}
+                  aria-label={`Delete ${list.name}`}
+                  className="shrink-0 rounded-full p-1.5 text-[#9aa0a6] opacity-0 hover:bg-[#e0e0e0] hover:text-[#d93025] group-hover:opacity-100 dark:hover:bg-[#5f6368]"
+                >
+                  <TrashIcon className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
           </div>
         ))}
 

@@ -131,6 +131,17 @@ export function CheckIcon({ className }) {
   );
 }
 
+export function ShareIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
+      <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+      <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2" />
+      <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon({ className }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className={className}>

@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom';
 import TagEditor from './TagEditor';
+import TagChip from './TagChip';
 
-export default function ListItemRow({ item, allTags, onRemove, onAttachTag, onDetachTag, onCreateTag }) {
+export default function ListItemRow({
+  item,
+  allTags,
+  canEdit = true,
+  onRemove,
+  onAttachTag,
+  onDetachTag,
+  onCreateTag,
+}) {
   return (
     <div className="flex flex-col gap-2 border-b border-[#f1f3f4] px-4 py-3 hover:bg-[#f8f9fa] dark:border-[#3c4043] dark:hover:bg-[#292a2d]">
       <div className="flex items-center gap-4">
@@ -11,14 +20,32 @@ export default function ListItemRow({ item, allTags, onRemove, onAttachTag, onDe
         >
           {item.fileName}
         </Link>
-        <button
-          onClick={() => onRemove(item.id)}
-          className="shrink-0 text-xs font-medium text-[#5f6368] hover:text-[#d93025] dark:text-[#9aa0a6]"
-        >
-          Remove
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => onRemove(item.id)}
+            className="shrink-0 text-xs font-medium text-[#5f6368] hover:text-[#d93025] dark:text-[#9aa0a6]"
+          >
+            Remove
+          </button>
+        )}
       </div>
-      <TagEditor item={item} allTags={allTags} onAttach={onAttachTag} onDetach={onDetachTag} onCreateTag={onCreateTag} />
+      {canEdit ? (
+        <TagEditor
+          item={item}
+          allTags={allTags}
+          onAttach={onAttachTag}
+          onDetach={onDetachTag}
+          onCreateTag={onCreateTag}
+        />
+      ) : (
+        item.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {item.tags.map((tag) => (
+              <TagChip key={tag.id} tag={tag} />
+            ))}
+          </div>
+        )
+      )}
     </div>
   );
 }

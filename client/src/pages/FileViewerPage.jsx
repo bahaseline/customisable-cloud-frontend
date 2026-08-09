@@ -1,29 +1,21 @@
 import { Link, useParams } from 'react-router-dom';
-import { useFile } from '../hooks/queries';
+import { useFilePreview } from '../hooks/useFilePreview';
 import { BackIcon } from '../components/icons';
 import Spinner from '../components/Spinner';
 
-function buildPreviewUrl(file) {
-  switch (file.mimeType) {
-    case 'application/vnd.google-apps.document':
-      return `https://docs.google.com/document/d/${file.id}/preview`;
-    case 'application/vnd.google-apps.spreadsheet':
-      return `https://docs.google.com/spreadsheets/d/${file.id}/preview`;
-    case 'application/vnd.google-apps.presentation':
-      return `https://docs.google.com/presentation/d/${file.id}/preview`;
-    case 'application/vnd.google-apps.folder':
-      return null;
-    default:
-      return `https://drive.google.com/file/d/${file.id}/preview`;
-  }
+const FALLBACK_MESSAGES = {
+  folder: 'This is a folder, so there is nothing to preview.',
+  'too-large': 'This file is too large to preview here.',
+  unsupported: 'This file type can’t be previewed here.',
+};
+
+function Centered({ children }) {
+  return <div className="flex h-full items-center justify-center px-6 text-center">{children}</div>;
 }
 
 export default function FileViewerPage() {
   const { fileId } = useParams();
-  const { data: file, isLoading: loading, isError } = useFile(fileId);
-  const error = isError ? 'Could not load this file.' : null;
-
-  const previewUrl = file ? buildPreviewUrl(file) : null;
+  const { file, kind, blobUrl, loading, error } = useFilePreview(fileId);
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-[#202124]">
@@ -51,29 +43,45 @@ export default function FileViewerPage() {
         )}
       </header>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden bg-[#f8f9fa] dark:bg-[#202124]">
         {loading && (
-          <div className="flex h-full items-center justify-center">
+          <Centered>
             <Spinner />
-          </div>
+          </Centered>
         )}
 
         {!loading && error && (
-          <div className="flex h-full items-center justify-center">
+          <Centered>
             <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">{error}</p>
-          </div>
+          </Centered>
         )}
 
-        {!loading && !error && previewUrl && (
-          <iframe src={previewUrl} title={file.name} className="h-full w-full border-0" allow="autoplay" />
+        {!loading && !error && kind === 'pdf' && blobUrl && (
+          <iframe src={blobUrl} title={file.name} className="h-full w-full border-0" />
         )}
 
-        {!loading && !error && file && !previewUrl && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">
-              This item can't be previewed here.
-            </p>
-          </div>
+        {!loading && !error && kind === 'image' && blobUrl && (
+          <Centered>
+            <img src={blobUrl} alt={file.name} className="max-h-full max-w-full object-contain" />
+          </Centered>
+        )}
+
+        {!loading && !error && FALLBACK_MESSAGES[kind] && (
+          <Centered>
+            <div>
+              <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">{FALLBACK_MESSAGES[kind]}</p>
+              {file && kind !== 'folder' && (
+                <a
+                  href={file.webViewLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-block rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white hover:bg-[#1765cc]"
+                >
+                  Open in Google Drive
+                </a>
+              )}
+            </div>
+          </Centered>
         )}
       </main>
     </div>

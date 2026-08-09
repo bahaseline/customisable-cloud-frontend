@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useFilterDropdown(onSelectList, onSelectTag) {
+export function useFilterDropdown() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -18,15 +18,10 @@ export function useFilterDropdown(onSelectList, onSelectTag) {
     setOpen((prev) => !prev);
   }
 
-  function selectList(listId) {
-    onSelectList(listId);
+  function select(item) {
+    item.onSelect();
     setOpen(false);
   }
 
-  function selectTag(tagId) {
-    onSelectTag(tagId);
-    setOpen(false);
-  }
-
-  return { open, containerRef, toggle, selectList, selectTag };
+  return { open, containerRef, toggle, select };
 }

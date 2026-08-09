@@ -24,6 +24,17 @@ export function useFile(fileId) {
   });
 }
 
+export function useFileContent(fileId, enabled) {
+  return useQuery({
+    queryKey: ['files', fileId, 'content'],
+    queryFn: async () =>
+      (await apiClient.get(`/api/files/${fileId}/content`, { responseType: 'blob' })).data,
+    enabled: !!fileId && enabled,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
 export function useLists() {
   const query = useQuery({
     queryKey: ['lists'],
@@ -88,6 +99,38 @@ export function useRemoveFromList(listId) {
   return useMutation({
     mutationFn: (itemId) => apiClient.delete(`/api/lists/${listId}/items/${itemId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lists', listId] }),
+  });
+}
+
+export function useListMembers(listId) {
+  const query = useQuery({
+    queryKey: ['lists', listId, 'members'],
+    queryFn: async () => (await apiClient.get(`/api/lists/${listId}/members`)).data.members,
+    enabled: !!listId,
+  });
+  return { ...query, members: query.data || [] };
+}
+
+export function useAddMember(listId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ email, role }) =>
+      apiClient.post(`/api/lists/${listId}/members`, { email, role }).then((res) => res.data.member),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lists', listId, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
+    },
+  });
+}
+
+export function useRemoveMember(listId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId) => apiClient.delete(`/api/lists/${listId}/members/${userId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lists', listId, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
+    },
   });
 }
 
