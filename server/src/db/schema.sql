@@ -30,13 +30,25 @@ CREATE TABLE IF NOT EXISTS list_items (
   added_at TIMESTAMP DEFAULT NOW()
 );
 
--- Shared list members (RBAC — stretch goal)
+-- Shared list members (RBAC)
 CREATE TABLE IF NOT EXISTS list_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   list_id UUID REFERENCES custom_lists(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  role VARCHAR DEFAULT 'viewer'     -- 'owner' | 'editor' | 'viewer'
+  role VARCHAR NOT NULL DEFAULT 'viewer',   -- 'editor' | 'viewer' (owner lives on custom_lists.owner_id)
+  added_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (list_id, user_id)
 );
+
+ALTER TABLE list_members ADD COLUMN IF NOT EXISTS added_at TIMESTAMP DEFAULT NOW();
+
+-- Postgres has no ADD CONSTRAINT IF NOT EXISTS, so guard it for pre-existing databases.
+DO $$
+BEGIN
+  ALTER TABLE list_members ADD CONSTRAINT list_members_list_id_user_id_key UNIQUE (list_id, user_id);
+EXCEPTION
+  WHEN duplicate_table THEN NULL;
+END $$;
 
 -- Tags (Gmail-label style) — scoped per user, applied to list items
 CREATE TABLE IF NOT EXISTS tags (

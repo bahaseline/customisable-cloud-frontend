@@ -1,4 +1,4 @@
-const { pool, queryOne, queryRows } = require('../db');
+const { queryOne, queryRows, execute } = require('../db');
 
 async function createTag(ownerId, name, color) {
   return queryOne(
@@ -37,7 +37,7 @@ async function getTagOwnedBy(tagId, ownerId) {
 }
 
 async function attachTag(listItemId, tagId) {
-  await pool.query(
+  await execute(
     `INSERT INTO list_item_tags (list_item_id, tag_id)
      VALUES ($1, $2)
      ON CONFLICT DO NOTHING`,
@@ -58,7 +58,8 @@ async function getItemsByTag(ownerId, tagId) {
      FROM list_items li
      JOIN list_item_tags lit ON lit.list_item_id = li.id
      JOIN custom_lists cl ON cl.id = li.list_id
-     WHERE lit.tag_id = $1 AND cl.owner_id = $2
+     LEFT JOIN list_members m ON m.list_id = cl.id AND m.user_id = $2
+     WHERE lit.tag_id = $1 AND (cl.owner_id = $2 OR m.user_id = $2)
      ORDER BY li.added_at DESC`,
     [tagId, ownerId]
   );

@@ -15,4 +15,10 @@ async function upsertUser({ googleId, email, name, accessToken, refreshToken }) 
   );
 }
 
-module.exports = { upsertUser };
+async function getUserByEmail(email) {
+  return queryOne('SELECT id, google_id, email, name FROM users WHERE LOWER(email) = LOWER($1)', [
+    email,
+  ]);
+}
+
+module.exports = { upsertUser, getUserByEmail };

@@ -1,12 +1,23 @@
 const listService = require('../services/listService');
+const { ROLES, satisfies } = require('../constants/roles');
 
-async function requireOwnedList(req, res, next) {
-  const list = await listService.getListOwnedBy(req.params.listId, req.user.id);
-  if (!list) {
-    return res.status(404).json({ error: 'List not found' });
-  }
-  req.list = list;
-  next();
+function requireListAccess(minRole = ROLES.VIEWER) {
+  return async function loadList(req, res, next) {
+    const list = await listService.getListAccess(req.params.listId, req.user.id);
+
+    // Hides the existence of lists the user cannot see at all: 404, never 403.
+    if (!list) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+
+    if (!satisfies(list.role, minRole)) {
+      return res.status(403).json({ error: `This action requires ${minRole} access` });
+    }
+
+    req.list = list;
+    req.listRole = list.role;
+    next();
+  };
 }
 
 async function requireListItem(req, res, next) {
@@ -18,4 +29,4 @@ async function requireListItem(req, res, next) {
   next();
 }
 
-module.exports = { requireOwnedList, requireListItem };
+module.exports = { requireListAccess, requireListItem };

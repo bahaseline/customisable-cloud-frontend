@@ -1,4 +1,4 @@
-const { queryOne, queryRows } = require('../db');
+const { queryOne, queryRows, execute } = require('../db');
 
 async function createList(ownerId, name) {
   return queryOne(
@@ -11,19 +11,26 @@ async function createList(ownerId, name) {
 
 async function getListsForUser(userId) {
   return queryRows(
-    `SELECT DISTINCT l.id, l.owner_id, l.name, l.is_shared, l.created_at
+    `SELECT l.id, l.owner_id, l.name, l.is_shared, l.created_at,
+            CASE WHEN l.owner_id = $1 THEN 'owner' ELSE m.role END AS role
      FROM custom_lists l
-     LEFT JOIN list_members m ON m.list_id = l.id
+     LEFT JOIN list_members m ON m.list_id = l.id AND m.user_id = $1
      WHERE l.owner_id = $1 OR m.user_id = $1
      ORDER BY l.created_at DESC`,
     [userId]
   );
 }
 
-async function getListOwnedBy(listId, ownerId) {
+// Resolves a user's effective role on a list: 'owner' from custom_lists.owner_id,
+// otherwise the role recorded in list_members. Undefined when they have no access.
+async function getListAccess(listId, userId) {
   return queryOne(
-    'SELECT id, owner_id, name, is_shared, created_at FROM custom_lists WHERE id = $1 AND owner_id = $2',
-    [listId, ownerId]
+    `SELECT l.id, l.owner_id, l.name, l.is_shared, l.created_at,
+            CASE WHEN l.owner_id = $2 THEN 'owner' ELSE m.role END AS role
+     FROM custom_lists l
+     LEFT JOIN list_members m ON m.list_id = l.id AND m.user_id = $2
+     WHERE l.id = $1 AND (l.owner_id = $2 OR m.user_id = $2)`,
+    [listId, userId]
   );
 }
 
@@ -75,13 +82,57 @@ async function getItemsForList(listId) {
   );
 }
 
+async function getMembersForList(listId) {
+  return queryRows(
+    `SELECT u.id AS user_id, u.email, u.name, 'owner' AS role, l.created_at AS added_at
+     FROM custom_lists l
+     JOIN users u ON u.id = l.owner_id
+     WHERE l.id = $1
+     UNION ALL
+     SELECT u.id AS user_id, u.email, u.name, m.role, m.added_at
+     FROM list_members m
+     JOIN users u ON u.id = m.user_id
+     WHERE m.list_id = $1
+     ORDER BY added_at`,
+    [listId]
+  );
+}
+
+async function addMember(listId, userId, role) {
+  const member = await queryOne(
+    `INSERT INTO list_members (list_id, user_id, role)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (list_id, user_id) DO UPDATE SET role = EXCLUDED.role
+     RETURNING id, list_id, user_id, role, added_at`,
+    [listId, userId, role]
+  );
+  await execute('UPDATE custom_lists SET is_shared = TRUE WHERE id = $1', [listId]);
+  return member;
+}
+
+async function removeMember(listId, userId) {
+  const removed = await queryOne(
+    'DELETE FROM list_members WHERE list_id = $1 AND user_id = $2 RETURNING user_id',
+    [listId, userId]
+  );
+  await execute(
+    `UPDATE custom_lists SET is_shared = EXISTS (SELECT 1 FROM list_members WHERE list_id = $1)
+     WHERE id = $1`,
+    [listId]
+  );
+  return removed;
+}
+
 module.exports = {
   createList,
   getListsForUser,
-  getListOwnedBy,
+  getListAccess,
   deleteList,
   addItem,
   removeItem,
   getItemInList,
   getItemsForList,
+  getMembersForList,
+  addMember,
+  removeMember,
 };
