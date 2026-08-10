@@ -22,6 +22,15 @@ async function getListDetail(req, res) {
   res.json({ list: keysToCamel(req.list), items: keysToCamel(items) });
 }
 
+async function renameList(req, res) {
+  const { name } = req.body;
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ error: 'name is required' });
+  }
+  const list = await listService.renameList(req.list.id, String(name).trim());
+  res.json({ list: keysToCamel(list) });
+}
+
 async function deleteList(req, res) {
   await listService.deleteList(req.list.id, req.user.id);
   res.status(204).end();
@@ -88,6 +97,7 @@ module.exports = {
   createList,
   getLists,
   getListDetail,
+  renameList,
   deleteList,
   addItem,
   removeItem,

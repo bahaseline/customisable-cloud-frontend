@@ -7,6 +7,7 @@ import {
   useTagItems,
   useCreateList,
   useDeleteList,
+  useRenameList,
   useAddToList,
   useRemoveFromList,
   useCreateTag,
@@ -36,6 +37,7 @@ export function useFilesPage() {
 
   const createList = useCreateList();
   const deleteList = useDeleteList();
+  const renameList = useRenameList();
   const addToList = useAddToList();
   const removeFromList = useRemoveFromList(activeListId);
   const createTag = useCreateTag();
@@ -188,6 +190,7 @@ export function useFilesPage() {
     handleSelectTag,
     handleDeleteList,
     onCreateList: (name) => createList.mutate(name),
+    onRenameList: (listId, name) => renameList.mutate({ listId, name }),
     onAddToList: (listId, file) => addToList.mutate({ listId, file }),
     onAddFileToActiveList: (file) => addToList.mutate({ listId: activeListId, file }),
     onRemoveFromList: (itemId) => removeFromList.mutate(itemId),

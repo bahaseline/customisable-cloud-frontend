@@ -64,6 +64,13 @@ test('full custom list CRUD lifecycle', async () => {
   );
   assert.equal(removeItem.status, 204);
 
+  const rename = await authed(request(app).put(`/api/lists/${listId}`)).send({ name: 'Renamed List' });
+  assert.equal(rename.status, 200);
+  assert.equal(rename.body.list.name, 'Renamed List');
+
+  const emptyRename = await authed(request(app).put(`/api/lists/${listId}`)).send({ name: '  ' });
+  assert.equal(emptyRename.status, 400);
+
   const deleteList = await authed(request(app).delete(`/api/lists/${listId}`));
   assert.equal(deleteList.status, 204);
 

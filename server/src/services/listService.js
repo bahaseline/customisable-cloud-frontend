@@ -34,6 +34,14 @@ async function getListAccess(listId, userId) {
   );
 }
 
+async function renameList(listId, name) {
+  return queryOne(
+    `UPDATE custom_lists SET name = $2 WHERE id = $1
+     RETURNING id, owner_id, name, is_shared, created_at`,
+    [listId, name]
+  );
+}
+
 async function deleteList(listId, ownerId) {
   return queryOne('DELETE FROM custom_lists WHERE id = $1 AND owner_id = $2 RETURNING id', [
     listId,
@@ -129,6 +137,7 @@ module.exports = {
   createList,
   getListsForUser,
   getListAccess,
+  renameList,
   deleteList,
   addItem,
   removeItem,

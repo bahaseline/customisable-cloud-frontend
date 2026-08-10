@@ -1,30 +1,14 @@
 import { useState } from 'react';
 
-export function useListsSidebar(onCreateList) {
-  const [creating, setCreating] = useState(false);
-  const [newListName, setNewListName] = useState('');
+export function useListsSidebar() {
+  const [editing, setEditing] = useState(null);
 
-  function startCreating() {
-    setCreating(true);
-  }
-
-  function cancelCreating() {
-    setCreating(false);
-  }
-
-  function handleBlur() {
-    if (!newListName) setCreating(false);
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!newListName.trim()) return;
-    onCreateList(newListName.trim());
-    setNewListName('');
-    setCreating(false);
-  }
-
-  return { creating, newListName, setNewListName, startCreating, cancelCreating, handleBlur, handleSubmit };
+  return {
+    editing,
+    startCreating: () => setEditing('new'),
+    startRenaming: (list) => setEditing(list.id),
+    stopEditing: () => setEditing(null),
+  };
 }
 
 export function useTagDot(tag, onChangeColor) {

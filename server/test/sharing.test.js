@@ -112,6 +112,10 @@ test('an editor can add and remove items on a shared list', async () => {
 
   // An editor still cannot delete the list itself or manage membership.
   assert.equal((await as(editor, request(app).delete(`/api/lists/${listId}`))).status, 403);
+  assert.equal(
+    (await as(editor, request(app).put(`/api/lists/${listId}`)).send({ name: 'Hijacked' })).status,
+    403
+  );
   const invite = await as(editor, request(app).post(`/api/lists/${listId}/members`)).send({
     email: outsider.email,
   });

@@ -13,7 +13,9 @@ router.post('/', listsController.createList);
 router.get('/', listsController.getLists);
 
 // Reading a list: any member. Mutating its contents: editor or owner.
+// Renaming / deleting the list itself: owner only.
 router.get('/:listId', requireListAccess(ROLES.VIEWER), listsController.getListDetail);
+router.put('/:listId', requireListAccess(ROLES.OWNER), listsController.renameList);
 router.delete('/:listId', requireListAccess(ROLES.OWNER), listsController.deleteList);
 
 router.post('/:listId/items', requireListAccess(ROLES.EDITOR), listsController.addItem);

@@ -50,6 +50,7 @@ export default function FilesPage() {
     handleSelectTag,
     handleDeleteList,
     onCreateList,
+    onRenameList,
     onAddToList,
     onAddFileToActiveList,
     onRemoveFromList,
@@ -75,6 +76,7 @@ export default function FilesPage() {
           activeListId={activeListId}
           onSelectList={handleSelectList}
           onCreateList={onCreateList}
+          onRenameList={onRenameList}
           onDeleteList={handleDeleteList}
           onShareList={setShareListId}
           tags={allTags}

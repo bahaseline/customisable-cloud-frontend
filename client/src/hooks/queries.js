@@ -85,6 +85,15 @@ export function useDeleteList() {
   });
 }
 
+export function useRenameList() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, name }) =>
+      apiClient.put(`/api/lists/${listId}`, { name }).then((res) => res.data.list),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lists'] }),
+  });
+}
+
 export function useAddToList() {
   const queryClient = useQueryClient();
   return useMutation({
