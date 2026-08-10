@@ -28,6 +28,12 @@ router.get('/failure', (req, res) => {
   res.status(401).json({ error: 'Google authentication failed' });
 });
 
+// TODO: Implement Google account disconnection.
+// Currently, users can only revoke access through their Google Account settings.
+// Add an endpoint to revoke the Google OAuth token via Google's revocation API
+// and clear all locally stored Google credentials/tokens.
+// This is required to ensure access can always be fully revoked and recovered.
+
 router.post('/logout', (req, res) => {
   // JWT is stateless — client just discards the token.
   res.status(204).end();
