@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "for f in test/*.test.js; do node --test \"$f\" || exit 1; done"
+    "test": "for f in test/*.test.js; do node --test \"$f\" || exit 1; done",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
     "googleapis": "^173.0.0",
     "jsonwebtoken": "^9.0.3",
     "passport": "^0.7.0",
@@ -23,6 +25,9 @@
     "pg": "^8.22.0"
   },
   "devDependencies": {
+    "@eslint/js": "^8.57.1",
+    "eslint": "^8.57.1",
+    "globals": "^17.9.0",
     "supertest": "^7.2.2"
   }
 }

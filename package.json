@@ -1,0 +1,16 @@
+{
+  "name": "driveboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A customisable, shareable presentation layer over Google Drive",
+  "scripts": {
+    "lint": "npm run lint:server && npm run lint:client",
+    "lint:server": "cd server && npm run lint",
+    "lint:client": "cd client && npm run lint",
+    "test": "cd server && npm test",
+    "check": "npm run lint && npm test",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "install:all": "cd server && npm install && cd ../client && npm install"
+  }
+}
