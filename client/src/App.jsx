@@ -3,16 +3,19 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import FilesPage from './pages/FilesPage';
 import FileViewerPage from './pages/FileViewerPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
@@ -36,11 +39,13 @@ function App() {
                 }
               />
               <Route path="/" element={<Navigate to="/files" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -68,3 +68,9 @@ CREATE TABLE IF NOT EXISTS list_item_tags (
   tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY (list_item_id, tag_id)
 );
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_list_items_list_id ON list_items(list_id);
+CREATE INDEX IF NOT EXISTS idx_custom_lists_owner_id ON custom_lists(owner_id);
+CREATE INDEX IF NOT EXISTS idx_list_members_user_id ON list_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_list_item_tags_tag_id ON list_item_tags(tag_id);

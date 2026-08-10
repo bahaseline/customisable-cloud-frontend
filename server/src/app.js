@@ -8,6 +8,7 @@ const tagsRoutes = require('./routes/tags');
 const itemsRoutes = require('./routes/items');
 const { requireAuth } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
 
 const app = express();
 
@@ -19,7 +20,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/auth', authRoutes);
+app.use('/auth', authLimiter, authRoutes);
+
+app.use('/api', apiLimiter);
 
 app.get('/api/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
