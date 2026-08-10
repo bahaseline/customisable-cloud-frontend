@@ -52,6 +52,9 @@ export default function ListsSidebar({
       {creating ? (
         <form onSubmit={handleSubmit} className="mb-3 flex flex-col gap-2 rounded-2xl border border-[#dadce0] p-3 shadow-sm dark:border-[#5f6368]">
           <input
+            id="new-list-name"
+            name="listName"
+            autoComplete="off"
             autoFocus
             type="text"
             placeholder="List name"
@@ -156,19 +159,23 @@ export default function ListsSidebar({
 
         {tags &&
           tags.map((tag) => (
-            <button
+            <div
               key={tag.id}
-              onClick={() => onSelectTag(tag.id)}
-              className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-left text-sm ${
+              className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-sm ${
                 activeTagId === tag.id
                   ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
                   : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
               }`}
-              title={tag.name}
             >
               <TagDot tag={tag} active={activeTagId === tag.id} onChangeColor={onChangeTagColor} />
-              <span className="truncate">{tag.name}</span>
-            </button>
+              <button
+                onClick={() => onSelectTag(tag.id)}
+                className="min-w-0 flex-1 truncate text-left"
+                title={tag.name}
+              >
+                {tag.name}
+              </button>
+            </div>
           ))}
       </nav>
     </aside>

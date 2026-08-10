@@ -1,6 +1,9 @@
+import { useId } from 'react';
 import { FolderPlusIcon } from './icons';
 
 export default function AddToListSelect({ file, lists, onAddToList, size = 'md' }) {
+  const selectId = useId();
+
   if (lists.length === 0) return null;
 
   const dimensions = size === 'sm' ? 'w-6 py-1' : 'w-8 py-1.5';
@@ -9,6 +12,8 @@ export default function AddToListSelect({ file, lists, onAddToList, size = 'md' 
   return (
     <div className="relative shrink-0 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
       <select
+        id={selectId}
+        name="addToList"
         aria-label={`Add ${file.name} to a list`}
         className={`peer cursor-pointer appearance-none rounded-full text-transparent hover:bg-[#e8eaed] focus:outline-none dark:hover:bg-[#3c4043] ${dimensions}`}
         defaultValue=""

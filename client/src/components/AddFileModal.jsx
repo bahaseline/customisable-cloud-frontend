@@ -19,6 +19,9 @@ export default function AddFileModal({
     <>
       <SearchIcon className="h-5 w-5 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
       <input
+        id="add-file-search"
+        name="fileSearch"
+        autoComplete="off"
         autoFocus
         type="text"
         value={query}

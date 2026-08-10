@@ -43,6 +43,9 @@ export default function ShareListModal({ open, onClose, listId, listName }) {
       <form onSubmit={handleInvite} className="flex flex-col gap-2 px-5 py-4">
         <div className="flex gap-2">
           <input
+            id="share-invite-email"
+            name="email"
+            autoComplete="email"
             autoFocus
             type="email"
             value={email}
@@ -51,6 +54,8 @@ export default function ShareListModal({ open, onClose, listId, listName }) {
             className="min-w-0 flex-1 rounded-lg border border-[#dadce0] px-3 py-2 text-sm focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#202124] dark:text-[#e8eaed]"
           />
           <select
+            id="share-invite-role"
+            name="role"
             value={role}
             onChange={(e) => setRole(e.target.value)}
             aria-label="Access level"

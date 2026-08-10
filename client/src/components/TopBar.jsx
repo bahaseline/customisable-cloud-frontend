@@ -23,6 +23,9 @@ export default function TopBar({ search, onSearchChange, user, onLogout, placeho
       <div className="flex max-w-[720px] flex-1 items-center gap-3 rounded-full bg-[#eaf1fb] px-4 py-2.5 focus-within:bg-white focus-within:shadow-md dark:bg-[#292a2d] dark:focus-within:bg-[#2f3033]">
         <SearchIcon className="h-5 w-5 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
         <input
+          id="drive-search"
+          name="search"
+          autoComplete="off"
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}

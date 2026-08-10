@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { TAG_COLORS } from './tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import TagChip from './TagChip';
@@ -21,6 +22,9 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
     handleBlur,
   } = useTagEditor(item, allTags, onAttach, onCreateTag);
 
+  // One editor per list item, so the id cannot be a constant.
+  const inputId = useId();
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {item.tags.map((tag) => (
@@ -30,6 +34,9 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
       {adding ? (
         <form onSubmit={handleCreateAndAttach} className="relative">
           <input
+            id={inputId}
+            name="tagName"
+            autoComplete="off"
             autoFocus
             type="text"
             value={query}
