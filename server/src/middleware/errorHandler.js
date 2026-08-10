@@ -2,7 +2,11 @@ const POSTGRES_INVALID_INPUT = '22P02';
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  console.error(err);
+  // Several tests deliberately trigger errors to assert the status code. Their
+  // stack traces would bury a genuine failure in the runner's output.
+  if (process.env.NODE_ENV !== 'test') {
+    console.error(err);
+  }
 
   if (res.headersSent) {
     return res.destroy(err);
