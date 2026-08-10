@@ -1,5 +1,6 @@
 import ThemeToggle from './ThemeToggle';
 import { SearchIcon } from './icons';
+import Logo from './Logo';
 
 function UserAvatar({ name, email }) {
   const initial = (name || email || '?').charAt(0).toUpperCase();
@@ -14,9 +15,7 @@ export default function TopBar({ search, onSearchChange, user, onLogout, placeho
   return (
     <header className="flex h-16 shrink-0 items-center gap-6 border-b border-[#e0e0e0] bg-white px-4 dark:border-[#3c4043] dark:bg-[#202124]">
       <div className="flex w-52 shrink-0 items-center gap-2 pl-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-[#1a73e8] text-sm font-bold text-white">
-          D
-        </div>
+        <Logo className="h-8 w-8 shrink-0 text-[#1a73e8] dark:text-[#8ab4f8]" />
         <span className="text-xl text-[#5f6368] dark:text-[#e8eaed]">Driveboard</span>
       </div>
 

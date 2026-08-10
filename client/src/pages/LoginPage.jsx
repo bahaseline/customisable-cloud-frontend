@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../api/client';
 import ThemeToggle from '../components/ThemeToggle';
+import Logo from '../components/Logo';
 
 function GoogleIcon() {
   return (
@@ -31,9 +32,7 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50 dark:border-[#3c4043] dark:bg-[#292a2d] dark:shadow-none">
-        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-          D
-        </div>
+        <Logo className="mx-auto mb-5 h-14 w-14 text-blue-600 dark:text-[#8ab4f8]" />
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-[#e8eaed]">Driveboard</h1>
         <p className="mt-2 text-sm text-slate-500 dark:text-[#9aa0a6]">
           Your frequently-used Google Drive files, organised in one place.
