@@ -18,7 +18,7 @@ async function getLists(req, res) {
 }
 
 async function getListDetail(req, res) {
-  const items = await listService.getItemsForList(req.list.id);
+  const items = await listService.getItemsForList(req.list.id, req.user.id);
   res.json({ list: keysToCamel(req.list), items: keysToCamel(items) });
 }
 

@@ -145,6 +145,9 @@ being saved in the database.
 the real protection, the middleware is. If a list is not shared with you the API
 returns 404 instead of 403, because a 403 would tell you the list exists.
 
+**Tags are personal.** Like Gmail labels, each member only sees and manages their
+own tags on a shared list. List contents are shared; personal organisation is not.
+
 **File preview goes through the server.** Google's preview needs a cookie that
 an iframe cannot send, so private files showed a login screen. Now the server
 downloads the file with its own token and sends it to the browser.

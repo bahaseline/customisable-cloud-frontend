@@ -50,7 +50,8 @@ EXCEPTION
   WHEN duplicate_table THEN NULL;
 END $$;
 
--- Tags (Gmail-label style) — scoped per user, applied to list items
+-- Tags (Gmail-label style) — owned per user and private to that user even on
+-- shared lists. Other members never see someone else's labels.
 CREATE TABLE IF NOT EXISTS tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id UUID REFERENCES users(id) ON DELETE CASCADE,

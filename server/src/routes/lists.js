@@ -23,15 +23,17 @@ router.delete(
   requireListItem,
   listsController.removeItem
 );
+// Personal labels: any list member may attach/detach their own tags.
+// Ownership of the tag is enforced in the controller.
 router.post(
   '/:listId/items/:itemId/tags',
-  requireListAccess(ROLES.EDITOR),
+  requireListAccess(ROLES.VIEWER),
   requireListItem,
   tagsController.attachTagToItem
 );
 router.delete(
   '/:listId/items/:itemId/tags/:tagId',
-  requireListAccess(ROLES.EDITOR),
+  requireListAccess(ROLES.VIEWER),
   requireListItem,
   tagsController.detachTagFromItem
 );

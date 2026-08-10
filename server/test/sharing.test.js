@@ -210,3 +210,57 @@ test('a member can find their own tagged items inside a list they do not own', a
   assert.equal(found.body.items.length, 1);
   assert.equal(found.body.items[0].driveFileId, 'drive-shared-1');
 });
+
+test('tags are personal: members only see their own labels on a shared list', async () => {
+  const listId = await createList('Private Labels');
+  await as(owner, request(app).post(`/api/lists/${listId}/members`)).send({
+    email: viewer.email,
+    role: 'viewer',
+  });
+
+  const item = await as(owner, request(app).post(`/api/lists/${listId}/items`)).send({
+    driveFileId: 'drive-labels-1',
+    fileName: 'Notes.docx',
+  });
+  const itemId = item.body.item.id;
+
+  const ownerTag = await as(owner, request(app).post('/api/tags')).send({ name: 'OwnerOnly' });
+  const viewerTag = await as(viewer, request(app).post('/api/tags')).send({ name: 'ViewerOnly' });
+
+  assert.equal(
+    (
+      await as(owner, request(app).post(`/api/lists/${listId}/items/${itemId}/tags`)).send({
+        tagId: ownerTag.body.tag.id,
+      })
+    ).status,
+    204
+  );
+  // Viewers may label for themselves, they cannot change list membership or items.
+  assert.equal(
+    (
+      await as(viewer, request(app).post(`/api/lists/${listId}/items/${itemId}/tags`)).send({
+        tagId: viewerTag.body.tag.id,
+      })
+    ).status,
+    204
+  );
+
+  const asOwner = await as(owner, request(app).get(`/api/lists/${listId}`));
+  assert.deepEqual(
+    asOwner.body.items[0].tags.map((t) => t.name).sort(),
+    ['OwnerOnly']
+  );
+
+  const asViewer = await as(viewer, request(app).get(`/api/lists/${listId}`));
+  assert.deepEqual(
+    asViewer.body.items[0].tags.map((t) => t.name).sort(),
+    ['ViewerOnly']
+  );
+
+  // A viewer cannot strip someone else's personal label.
+  const steal = await as(
+    viewer,
+    request(app).delete(`/api/lists/${listId}/items/${itemId}/tags/${ownerTag.body.tag.id}`)
+  );
+  assert.equal(steal.status, 404);
+});

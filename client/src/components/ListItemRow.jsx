@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import TagEditor from './TagEditor';
-import TagChip from './TagChip';
 
 export default function ListItemRow({
   item,
   allTags,
   canEdit = true,
+  canLabel = true,
   onRemove,
   onAttachTag,
   onDetachTag,
@@ -29,7 +29,7 @@ export default function ListItemRow({
           </button>
         )}
       </div>
-      {canEdit ? (
+      {canLabel && (
         <TagEditor
           item={item}
           allTags={allTags}
@@ -37,14 +37,6 @@ export default function ListItemRow({
           onDetach={onDetachTag}
           onCreateTag={onCreateTag}
         />
-      ) : (
-        item.tags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {item.tags.map((tag) => (
-              <TagChip key={tag.id} tag={tag} />
-            ))}
-          </div>
-        )
       )}
     </div>
   );

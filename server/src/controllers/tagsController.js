@@ -71,6 +71,11 @@ async function attachTagToItem(req, res) {
 }
 
 async function detachTagFromItem(req, res) {
+  const tag = await tagService.getTagOwnedBy(req.params.tagId, req.user.id);
+  if (!tag) {
+    return res.status(404).json({ error: 'Tag not found' });
+  }
+
   const removed = await tagService.detachTag(req.item.id, req.params.tagId);
   if (!removed) {
     return res.status(404).json({ error: 'Tag not attached to this item' });

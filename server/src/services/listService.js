@@ -64,11 +64,9 @@ async function getItemInList(listId, itemId) {
   );
 }
 
-// TODO: this returns every tag on an item regardless of who created it, so a
-// member's private labels are visible to everyone on a shared list. Decide
-// whether tags are personal (filter by owner_id) or shared (leave as is) —
-// Seo et al. (2026) note that visibility can feel like surveillance.
-async function getItemsForList(listId) {
+// Tags are personal (Gmail-style): each member only sees labels they own.
+// Showing others' labels on a shared list can feel like surveillance.
+async function getItemsForList(listId, userId) {
   return queryRows(
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at,
             COALESCE(
@@ -78,11 +76,11 @@ async function getItemsForList(listId) {
             ) AS tags
      FROM list_items li
      LEFT JOIN list_item_tags lit ON lit.list_item_id = li.id
-     LEFT JOIN tags t ON t.id = lit.tag_id
+     LEFT JOIN tags t ON t.id = lit.tag_id AND t.owner_id = $2
      WHERE li.list_id = $1
      GROUP BY li.id
      ORDER BY li.added_at DESC`,
-    [listId]
+    [listId, userId]
   );
 }
 

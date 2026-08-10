@@ -187,6 +187,7 @@ export default function FilesPage() {
                   item={item}
                   allTags={allTags}
                   canEdit={canEdit}
+                  canLabel={!!activeList}
                   onRemove={onRemoveFromList}
                   onAttachTag={onAttachTag}
                   onDetachTag={onDetachTag}
