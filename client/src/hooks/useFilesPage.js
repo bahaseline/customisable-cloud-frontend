@@ -5,6 +5,7 @@ import {
   useListDetail,
   useTags,
   useTagItems,
+  useFrequentFiles,
   useCreateList,
   useDeleteList,
   useRenameList,
@@ -15,12 +16,15 @@ import {
   useAttachTag,
   useDetachTag,
 } from './queries';
-import { useFilterConfig } from './useFilterConfig';
+import { buildFilterConfig } from '../utils/filterConfig';
 import { canEdit as roleCanEdit, isOwner as roleIsOwner } from '../constants/roles';
+import { useConfirm } from '../context/ConfirmContext';
 
 export function useFilesPage() {
+  const confirm = useConfirm();
   const [activeListId, setActiveListId] = useState(() => localStorage.getItem('activeListId') || null);
   const [activeTagId, setActiveTagId] = useState(() => localStorage.getItem('activeTagId') || null);
+  const [frequentActive, setFrequentActive] = useState(() => localStorage.getItem('frequentActive') === 'true');
   const [search, setSearch] = useState('');
   const [view, setView] = useState(() => localStorage.getItem('fileView') || 'list');
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -34,6 +38,11 @@ export function useFilesPage() {
   const { items: listItems, isLoading: listItemsLoading, isError: listItemsError } = useListDetail(activeListId);
   const { tags: allTags } = useTags();
   const { items: tagItems, isLoading: tagItemsLoading, isError: tagItemsError } = useTagItems(activeTagId);
+  const {
+    frequentFiles,
+    isLoading: frequentLoading,
+    isError: frequentError,
+  } = useFrequentFiles(frequentActive);
 
   const createList = useCreateList();
   const deleteList = useDeleteList();
@@ -55,6 +64,11 @@ export function useFilesPage() {
     else localStorage.removeItem('activeTagId');
   }, [activeTagId]);
 
+  useEffect(() => {
+    if (frequentActive) localStorage.setItem('frequentActive', 'true');
+    else localStorage.removeItem('frequentActive');
+  }, [frequentActive]);
+
   function handleViewChange(next) {
     setView(next);
     localStorage.setItem('fileView', next);
@@ -62,6 +76,7 @@ export function useFilesPage() {
 
   function handleSelectList(listId) {
     setActiveTagId(null);
+    setFrequentActive(false);
     setActiveListId(listId);
     setLabelFilter(null);
     setListFilter(null);
@@ -69,12 +84,30 @@ export function useFilesPage() {
 
   function handleSelectTag(tagId) {
     setActiveListId(null);
+    setFrequentActive(false);
     setActiveTagId(tagId);
     setLabelFilter(null);
     setListFilter(null);
   }
 
-  function handleDeleteList(listId) {
+  function handleSelectFrequent() {
+    setActiveListId(null);
+    setActiveTagId(null);
+    setFrequentActive(true);
+    setLabelFilter(null);
+    setListFilter(null);
+  }
+
+  async function handleDeleteList(listId) {
+    const list = lists.find((l) => l.id === listId);
+    const confirmed = await confirm({
+      title: 'Delete this list?',
+      message: `"${list?.name}" and its contents will be removed. The files themselves stay in your Google Drive.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
     deleteList.mutate(listId);
     if (activeListId === listId) {
       setActiveListId(null);
@@ -87,18 +120,28 @@ export function useFilesPage() {
   const isOwner = roleIsOwner(activeList?.role);
   const shareList = lists.find((l) => l.id === shareListId);
 
-  const searchPlaceholder = activeList
+  const searchPlaceholder = frequentActive
+    ? 'Search frequently used'
+    : activeList
     ? `Search in "${activeList.name}"`
     : activeTag
       ? `Search files labeled "${activeTag.name}"`
       : 'Search in Drive';
 
-  const loading = activeListId ? listItemsLoading : activeTagId ? tagItemsLoading : filesLoading;
-  const error = activeListId
-    ? listItemsError && 'Failed to load this list.'
-    : activeTagId
-      ? tagItemsError && 'Failed to load items for this label.'
-      : filesError && 'Failed to load files from Google Drive.';
+  const loading = frequentActive
+    ? frequentLoading
+    : activeListId
+      ? listItemsLoading
+      : activeTagId
+        ? tagItemsLoading
+        : filesLoading;
+  const error = frequentActive
+    ? frequentError && 'Failed to load your frequently used files.'
+    : activeListId
+      ? listItemsError && 'Failed to load this list.'
+      : activeTagId
+        ? tagItemsError && 'Failed to load items for this label.'
+        : filesError && 'Failed to load files from Google Drive.';
 
   const visibleFiles = useMemo(
     () => files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())),
@@ -112,6 +155,10 @@ export function useFilesPage() {
           (!labelFilter || i.tags.some((t) => t.id === labelFilter))
       ),
     [listItems, search, labelFilter]
+  );
+  const visibleFrequentFiles = useMemo(
+    () => frequentFiles.filter((f) => (f.fileName || '').toLowerCase().includes(search.toLowerCase())),
+    [frequentFiles, search]
   );
   const visibleTagItems = useMemo(
     () =>
@@ -136,7 +183,7 @@ export function useFilesPage() {
 
   const existingDriveFileIds = useMemo(() => new Set(listItems.map((i) => i.driveFileId)), [listItems]);
 
-  const filterDropdown = useFilterConfig({
+  const filterDropdown = buildFilterConfig({
     activeListId,
     activeTagId,
     lists,
@@ -157,6 +204,7 @@ export function useFilesPage() {
     allTags,
     activeListId,
     activeTagId,
+    frequentActive,
     activeList,
     activeTag,
     search,
@@ -179,6 +227,7 @@ export function useFilesPage() {
     visibleFiles,
     visibleListItems,
     visibleTagItems,
+    visibleFrequentFiles,
     existingDriveFileIds,
     filterDropdown,
     loading,
@@ -188,6 +237,7 @@ export function useFilesPage() {
     handleViewChange,
     handleSelectList,
     handleSelectTag,
+    handleSelectFrequent,
     handleDeleteList,
     onCreateList: (name) => createList.mutate(name),
     onRenameList: (listId, name) => renameList.mutate({ listId, name }),

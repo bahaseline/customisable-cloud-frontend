@@ -17,7 +17,7 @@ function filterGroups({ resetLabel, entities, activeId, onSelect, toItem }) {
 const asLabel = (tag) => ({ key: tag.id, label: tag.name, type: 'label', color: tag.color });
 const asList = (list) => ({ key: list.id, label: list.name, type: 'list' });
 
-export function useFilterConfig({
+export function buildFilterConfig({
   activeListId,
   activeTagId,
   lists,

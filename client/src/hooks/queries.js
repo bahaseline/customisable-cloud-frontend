@@ -35,6 +35,15 @@ export function useFileContent(fileId, enabled) {
   });
 }
 
+export function useFrequentFiles(enabled) {
+  const query = useQuery({
+    queryKey: ['files', 'frequent'],
+    queryFn: async () => (await apiClient.get('/api/files/frequent')).data.files,
+    enabled,
+  });
+  return { ...query, frequentFiles: query.data || [] };
+}
+
 export function useLists() {
   const query = useQuery({
     queryKey: ['lists'],
@@ -123,6 +132,7 @@ export function useListMembers(listId) {
 export function useAddMember(listId) {
   const queryClient = useQueryClient();
   return useMutation({
+    meta: { silent: true },
     mutationFn: ({ email, role }) =>
       apiClient.post(`/api/lists/${listId}/members`, { email, role }).then((res) => res.data.member),
     onSuccess: () => {

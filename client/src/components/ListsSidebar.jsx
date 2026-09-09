@@ -1,4 +1,4 @@
-import { FolderIcon, TrashIcon, ShareIcon, PencilIcon } from './icons';
+import { FolderIcon, TrashIcon, ShareIcon, PencilIcon, ClockIcon } from './icons';
 import { TAG_COLORS } from './tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import ListNameForm from './ListNameForm';
@@ -37,6 +37,8 @@ export default function ListsSidebar({
   lists,
   activeListId,
   onSelectList,
+  frequentActive,
+  onSelectFrequent,
   onCreateList,
   onRenameList,
   onDeleteList,
@@ -75,15 +77,29 @@ export default function ListsSidebar({
         <button
           onClick={() => onSelectList(null)}
           className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-left text-sm ${
-            activeListId === null && !activeTagId
+            activeListId === null && !activeTagId && !frequentActive
               ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
               : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
           }`}
         >
           <FolderIcon
-            className={`h-5 w-5 shrink-0 ${activeListId === null && !activeTagId ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
+            className={`h-5 w-5 shrink-0 ${activeListId === null && !activeTagId && !frequentActive ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
           />
           All Drive Files
+        </button>
+
+        <button
+          onClick={onSelectFrequent}
+          className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-left text-sm ${
+            frequentActive
+              ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
+              : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
+          }`}
+        >
+          <ClockIcon
+            className={`h-5 w-5 shrink-0 ${frequentActive ? 'text-[#1a73e8]' : 'text-[#5f6368] dark:text-[#9aa0a6]'}`}
+          />
+          Frequently used
         </button>
 
         {lists.length > 0 && (

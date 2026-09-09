@@ -7,6 +7,7 @@ import FileGridItem from '../components/FileGridItem';
 import ViewToggle from '../components/ViewToggle';
 import ListItemRow from '../components/ListItemRow';
 import TagItemRow from '../components/TagItemRow';
+import FileLinkRow from '../components/FileLinkRow';
 import EmptyState from '../components/EmptyState';
 import Spinner from '../components/Spinner';
 import FilterDropdown from '../components/FilterDropdown';
@@ -21,6 +22,7 @@ export default function FilesPage() {
     allTags,
     activeListId,
     activeTagId,
+    frequentActive,
     activeList,
     activeTag,
     search,
@@ -41,6 +43,7 @@ export default function FilesPage() {
     visibleFiles,
     visibleListItems,
     visibleTagItems,
+    visibleFrequentFiles,
     existingDriveFileIds,
     filterDropdown,
     loading,
@@ -48,6 +51,7 @@ export default function FilesPage() {
     handleViewChange,
     handleSelectList,
     handleSelectTag,
+    handleSelectFrequent,
     handleDeleteList,
     onCreateList,
     onRenameList,
@@ -75,6 +79,8 @@ export default function FilesPage() {
           lists={lists}
           activeListId={activeListId}
           onSelectList={handleSelectList}
+          frequentActive={frequentActive}
+          onSelectFrequent={handleSelectFrequent}
           onCreateList={onCreateList}
           onRenameList={onRenameList}
           onDeleteList={handleDeleteList}
@@ -89,7 +95,13 @@ export default function FilesPage() {
           <div className="flex items-center justify-between border-b border-[#e0e0e0] px-6 py-4 dark:border-[#3c4043]">
             <div className="flex min-w-0 items-center gap-2">
               <h1 className="truncate text-lg font-normal text-[#202124] dark:text-[#e8eaed]">
-                {activeList ? activeList.name : activeTag ? `Label: ${activeTag.name}` : 'All Drive Files'}
+                {frequentActive
+                  ? 'Frequently used'
+                  : activeList
+                    ? activeList.name
+                    : activeTag
+                      ? `Label: ${activeTag.name}`
+                      : 'All Drive Files'}
               </h1>
               {activeList && !isOwner && (
                 <span className="shrink-0 rounded-full bg-[#f1f3f4] px-2 py-0.5 text-xs text-[#5f6368] dark:bg-[#3c4043] dark:text-[#9aa0a6]">
@@ -116,7 +128,9 @@ export default function FilesPage() {
                 </button>
               )}
               <FilterDropdown buttonLabel={filterDropdown.buttonLabel} groups={filterDropdown.groups} />
-              {!activeListId && !activeTagId && <ViewToggle view={view} onChange={handleViewChange} />}
+              {!activeListId && !activeTagId && !frequentActive && (
+                <ViewToggle view={view} onChange={handleViewChange} />
+              )}
             </div>
           </div>
 
@@ -132,7 +146,7 @@ export default function FilesPage() {
             </div>
           )}
 
-          {!loading && !activeListId && !activeTagId && (
+          {!loading && !activeListId && !activeTagId && !frequentActive && (
             <>
               {visibleFiles.length === 0 && !error && (
                 <EmptyState
@@ -172,6 +186,28 @@ export default function FilesPage() {
                 </div>
               )}
             </>
+          )}
+
+          {!loading && frequentActive && visibleFrequentFiles.length === 0 && !error && (
+            <EmptyState
+              message={
+                search
+                  ? 'No files match your search.'
+                  : 'Nothing here yet. Files you open will start appearing, most used first.'
+              }
+            />
+          )}
+          {!loading && frequentActive && visibleFrequentFiles.length > 0 && (
+            <div>
+              {visibleFrequentFiles.map((file) => (
+                <FileLinkRow
+                  key={file.driveFileId}
+                  to={`/file/${file.driveFileId}`}
+                  name={file.fileName}
+                  meta={`opened ${file.openCount} ${file.openCount === 1 ? 'time' : 'times'}`}
+                />
+              ))}
+            </div>
           )}
 
           {!loading && activeListId && visibleListItems.length === 0 && !error && (

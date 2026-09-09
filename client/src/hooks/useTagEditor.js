@@ -26,23 +26,30 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   }
 
   async function handleSelect(tag) {
-    await onAttach(item.id, tag);
-    reset();
+    try {
+      await onAttach(item.id, tag);
+      reset();
+    } catch {
+      return;
+    }
   }
 
   async function handleCreateAndAttach(e) {
     e.preventDefault();
     const name = query.trim();
     if (!name) return;
-    if (exactMatch) {
-      if (!attachedIds.has(exactMatch.id)) await onAttach(item.id, exactMatch);
+
+    try {
+      if (exactMatch) {
+        if (!attachedIds.has(exactMatch.id)) await onAttach(item.id, exactMatch);
+      } else {
+        const tag = await onCreateTag(name, color);
+        await onAttach(item.id, tag);
+      }
       reset();
+    } catch {
       return;
     }
-
-    const tag = await onCreateTag(name, color);
-    await onAttach(item.id, tag);
-    reset();
   }
 
   function handleKeyDown(e) {
