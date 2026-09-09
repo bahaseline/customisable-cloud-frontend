@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { TAG_COLORS } from './tagColors';
+import { TAG_COLORS } from '../constants/tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import TagChip from './TagChip';
 import { useTagEditor } from '../hooks/useTagEditor';

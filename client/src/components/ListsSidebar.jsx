@@ -1,5 +1,5 @@
 import { FolderIcon, TrashIcon, ShareIcon, PencilIcon, ClockIcon } from './icons';
-import { TAG_COLORS } from './tagColors';
+import { TAG_COLORS } from '../constants/tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import ListNameForm from './ListNameForm';
 import { useListsSidebar, useTagDot } from '../hooks/useListsSidebar';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TAG_COLORS } from '../components/tagColors';
+import { TAG_COLORS } from '../constants/tagColors';
 
 export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   const [adding, setAdding] = useState(false);
