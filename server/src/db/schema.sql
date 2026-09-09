@@ -70,8 +70,20 @@ CREATE TABLE IF NOT EXISTS list_item_tags (
   PRIMARY KEY (list_item_id, tag_id)
 );
 
+-- Track how many times a user has opened a file, for "most opened first" sorting.
+CREATE TABLE IF NOT EXISTS file_opens (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  drive_file_id VARCHAR NOT NULL,
+  file_name VARCHAR,
+  open_count INTEGER NOT NULL DEFAULT 1,
+  last_opened_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_id, drive_file_id)
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_list_items_list_id ON list_items(list_id);
 CREATE INDEX IF NOT EXISTS idx_custom_lists_owner_id ON custom_lists(owner_id);
 CREATE INDEX IF NOT EXISTS idx_list_members_user_id ON list_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_list_item_tags_tag_id ON list_item_tags(tag_id);
+-- Serves the "most opened first" lookup without scanning every row.
+CREATE INDEX IF NOT EXISTS idx_file_opens_user_count ON file_opens(user_id, open_count DESC);

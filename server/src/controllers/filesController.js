@@ -1,4 +1,6 @@
 const { listFiles, getFile, getFileContent } = require('../services/driveService');
+const fileOpenService = require('../services/fileOpenService');
+const { keysToCamel } = require('../utils/camelCase');
 
 async function getFiles(req, res) {
   const { files, nextPageToken } = await listFiles(req.user.id, {
@@ -9,7 +11,17 @@ async function getFiles(req, res) {
 
 async function getFileById(req, res) {
   const file = await getFile(req.user.id, req.params.fileId);
+
+  fileOpenService
+    .recordOpen(req.user.id, file.id, file.name)
+    .catch((err) => console.error('Could not record file open:', err.message));
+
   res.json({ file });
+}
+
+async function getFrequentFiles(req, res) {
+  const files = await fileOpenService.getFrequentFiles(req.user.id);
+  res.json({ files: keysToCamel(files) });
 }
 
 async function streamFileContent(req, res, next) {
@@ -23,4 +35,4 @@ async function streamFileContent(req, res, next) {
   stream.pipe(res);
 }
 
-module.exports = { getFiles, getFileById, streamFileContent };
+module.exports = { getFiles, getFileById, getFrequentFiles, streamFileContent };
