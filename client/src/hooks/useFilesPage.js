@@ -19,9 +19,11 @@ import {
 import { buildFilterConfig } from '../utils/filterConfig';
 import { canEdit as roleCanEdit, isOwner as roleIsOwner } from '../constants/roles';
 import { useConfirm } from '../context/ConfirmContext';
+import { useAuth } from '../context/AuthContext';
 
 export function useFilesPage() {
   const confirm = useConfirm();
+  const { user } = useAuth();
   const [activeListId, setActiveListId] = useState(() => localStorage.getItem('activeListId') || null);
   const [activeTagId, setActiveTagId] = useState(() => localStorage.getItem('activeTagId') || null);
   const [frequentActive, setFrequentActive] = useState(() => localStorage.getItem('frequentActive') === 'true');
@@ -149,12 +151,18 @@ export function useFilesPage() {
   );
   const visibleListItems = useMemo(
     () =>
-      listItems.filter(
-        (i) =>
-          (i.fileName || '').toLowerCase().includes(search.toLowerCase()) &&
-          (!labelFilter || i.tags.some((t) => t.id === labelFilter))
-      ),
-    [listItems, search, labelFilter]
+      listItems
+        .filter(
+          (i) =>
+            (i.fileName || '').toLowerCase().includes(search.toLowerCase()) &&
+            (!labelFilter || i.tags.some((t) => t.id === labelFilter))
+        )
+        .map((i) => ({
+          ...i,
+          addedByLabel:
+            i.addedBy && i.addedBy !== user?.id ? i.addedByName || i.addedByEmail : null,
+        })),
+    [listItems, search, labelFilter, user?.id]
   );
   const visibleFrequentFiles = useMemo(
     () => frequentFiles.filter((f) => (f.fileName || '').toLowerCase().includes(search.toLowerCase())),

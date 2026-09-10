@@ -77,6 +77,7 @@ async function getItemInList(listId, itemId) {
 async function getItemsForList(listId, userId) {
   return queryRows(
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at,
+            u.name AS added_by_name, u.email AS added_by_email,
             COALESCE(
               json_agg(json_build_object('id', t.id, 'name', t.name, 'color', t.color))
                 FILTER (WHERE t.id IS NOT NULL),
@@ -85,8 +86,9 @@ async function getItemsForList(listId, userId) {
      FROM list_items li
      LEFT JOIN list_item_tags lit ON lit.list_item_id = li.id
      LEFT JOIN tags t ON t.id = lit.tag_id AND t.owner_id = $2
+     LEFT JOIN users u ON u.id = li.added_by
      WHERE li.list_id = $1
-     GROUP BY li.id
+     GROUP BY li.id, u.name, u.email
      ORDER BY li.added_at DESC`,
     [listId, userId]
   );

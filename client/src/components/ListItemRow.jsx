@@ -20,6 +20,11 @@ export default function ListItemRow({
         >
           {item.fileName}
         </Link>
+        {item.addedByLabel && (
+          <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+            added by {item.addedByLabel}
+          </span>
+        )}
         {canEdit && (
           <button
             onClick={() => onRemove(item.id)}

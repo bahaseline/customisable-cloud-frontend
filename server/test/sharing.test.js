@@ -104,6 +104,11 @@ test('an editor can add and remove items on a shared list', async () => {
   // The item records who actually added it, not the list owner.
   assert.equal(add.body.item.addedBy, editor.id);
 
+  const seenByOwner = await as(owner, request(app).get(`/api/lists/${listId}`));
+  const addedItem = seenByOwner.body.items.find((i) => i.id === add.body.item.id);
+  assert.equal(addedItem.addedBy, editor.id);
+  assert.equal(addedItem.addedByEmail, editor.email);
+
   const remove = await as(
     editor,
     request(app).delete(`/api/lists/${listId}/items/${add.body.item.id}`)
