@@ -5,6 +5,7 @@ assertEnv();
 
 const app = require('./app');
 const { pool } = require('./db');
+const { closeRedis } = require('./config/redis');
 
 const PORT = process.env.PORT || 3001;
 
@@ -17,6 +18,7 @@ function shutdown(signal) {
   console.log(`${signal} received, shutting down`);
   server.close(async () => {
     await pool.end();
+    await closeRedis();
     process.exit(0);
   });
 

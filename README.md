@@ -152,6 +152,12 @@ own tags on a shared list. List contents are shared; personal organisation is no
 an iframe cannot send, so private files showed a login screen. Now the server
 downloads the file with its own token and sends it to the browser.
 
+**Rate limiting is shared across instances when Redis is configured.** Without
+`REDIS_URL` set, each server process counts requests in its own memory, so
+running more than one instance behind a load balancer would let a client get
+away with more requests than intended. Setting `REDIS_URL` moves the counters
+into Redis so every instance enforces the same limit.
+
 ## Limitations
 
 Only Google Drive is supported. All the Google specific code is in
