@@ -5,7 +5,7 @@ import apiClient from '../api/client';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(() => localStorage.getItem('accessToken'));
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: loading } = useQuery({
@@ -14,7 +14,9 @@ export function AuthProvider({ children }) {
       try {
         return (await apiClient.get('/api/me')).data.user;
       } catch (err) {
-        localStorage.removeItem('token');
+        // If the access token is invalid or expired, clear it and the refresh token from localStorage and reset the token state.
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         setToken(null);
         throw err;
       }
@@ -23,13 +25,21 @@ export function AuthProvider({ children }) {
     retry: false,
   });
 
-  function login(newToken) {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
+  function login(accessToken, refreshToken) {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    setToken(accessToken);
   }
 
-  function logout() {
-    localStorage.removeItem('token');
+  async function logout() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    try {
+      await apiClient.post('/auth/logout', { refreshToken });
+    } catch (err) {
+      console.error('Could not revoke Google access on logout:', err.message);
+    }
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     setToken(null);
     queryClient.clear();
   }

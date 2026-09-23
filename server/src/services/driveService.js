@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const { queryOne, execute } = require('../db');
 const { encrypt, decrypt } = require('./cryptoService');
+const { clearTokens } = require('./userService');
 
 const PAGE_SIZE = 1000; // Drive API's maximum page size
 
@@ -22,12 +23,22 @@ const DRIVE_ERRORS = {
   403: 'You do not have permission to read this file',
 };
 
+// Wraps a Google Drive API error in an app-specific error with a user-facing message and an HTTP status code. The original error is attached as the cause.
+function appError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  err.isAppError = true;
+  return err;
+}
+
 function asAppError(err) {
+  if (err.isAppError) return err;
+
   const status = DRIVE_ERRORS[err.code] ? err.code : 502;
-  const appErr = new Error(DRIVE_ERRORS[status] || 'Failed to reach Google Drive');
-  appErr.status = status;
-  appErr.cause = err;
-  return appErr;
+  const wrapped = new Error(DRIVE_ERRORS[status] || 'Failed to reach Google Drive');
+  wrapped.status = status;
+  wrapped.cause = err;
+  return wrapped;
 }
 
 async function getUserTokens(userId) {
@@ -68,12 +79,35 @@ function buildOAuthClient(userId, tokens) {
 
 async function getDriveClient(userId) {
   const tokens = await getUserTokens(userId);
-  if (!tokens) {
-    throw new Error('User not found');
+  if (!tokens || (!tokens.access_token && !tokens.refresh_token)) {
+    // The user has either never granted Drive access, or has revoked it from their Google Account settings. Either way, the grant is no longer usable and the user must re-authenticate to continue.
+    throw appError('Google Drive access has been disconnected. Please sign in again.', 401);
   }
 
   const oauth2Client = buildOAuthClient(userId, tokens);
   return google.drive({ version: 'v3', auth: oauth2Client });
+}
+
+// Revokes the user's Google Drive access by revoking the underlying Google grant and clearing the stored tokens. If the user has already revoked the grant from their own Google Account settings, this will still clear the stored tokens.
+async function revokeGoogleAccess(userId) {
+  const tokens = await getUserTokens(userId);
+  if (!tokens || (!tokens.access_token && !tokens.refresh_token)) return;
+
+  const tokenToRevoke = decrypt(tokens.refresh_token) || decrypt(tokens.access_token);
+  if (tokenToRevoke) {
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_CALLBACK_URL
+    );
+    try {
+      await oauth2Client.revokeToken(tokenToRevoke);
+    } catch (err) {
+      console.error('Google token revocation failed:', err.message);
+    }
+  }
+
+  await clearTokens(userId);
 }
 
 async function listFiles(userId, { pageToken } = {}) {
@@ -115,9 +149,7 @@ async function getFileContent(userId, fileId) {
   }
 
   if (meta.mimeType === 'application/vnd.google-apps.folder') {
-    const err = new Error('Folders have no content to stream');
-    err.status = 400;
-    throw err;
+    throw appError('Folders have no content to stream', 400);
   }
 
   const exportType = NATIVE_EXPORT_TYPES[meta.mimeType];
@@ -137,4 +169,4 @@ async function getFileContent(userId, fileId) {
   };
 }
 
-module.exports = { listFiles, getFile, getFileContent };
+module.exports = { listFiles, getFile, getFileContent, revokeGoogleAccess };

@@ -80,6 +80,17 @@ CREATE TABLE IF NOT EXISTS file_opens (
   PRIMARY KEY (user_id, drive_file_id)
 );
 
+-- Refresh tokens: one row per signed-in device/browser. Only a SHA-256 hash
+-- of the token is stored, never the token itself
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  token_hash VARCHAR NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  revoked_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_list_items_list_id ON list_items(list_id);
 CREATE INDEX IF NOT EXISTS idx_custom_lists_owner_id ON custom_lists(owner_id);
@@ -87,3 +98,6 @@ CREATE INDEX IF NOT EXISTS idx_list_members_user_id ON list_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_list_item_tags_tag_id ON list_item_tags(tag_id);
 -- Serves the "most opened first" lookup without scanning every row.
 CREATE INDEX IF NOT EXISTS idx_file_opens_user_count ON file_opens(user_id, open_count DESC);
+-- The UNIQUE constraint above already indexes token_hash; this serves lookups
+-- and revocation by user instead (e.g. revoking every session on an account).
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);

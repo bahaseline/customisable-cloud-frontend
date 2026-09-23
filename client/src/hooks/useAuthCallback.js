@@ -12,9 +12,10 @@ export function useAuthCallback() {
     if (handled.current) return;
     handled.current = true;
 
-    const token = searchParams.get('token');
-    if (token) {
-      login(token);
+    const accessToken = searchParams.get('accessToken');
+    const refreshToken = searchParams.get('refreshToken');
+    if (accessToken && refreshToken) {
+      login(accessToken, refreshToken);
       navigate('/files', { replace: true });
     } else {
       navigate('/login', { replace: true });
