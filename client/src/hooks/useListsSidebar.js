@@ -10,19 +10,3 @@ export function useListsSidebar() {
     stopEditing: () => setEditing(null),
   };
 }
-
-export function useTagDot(tag, onChangeColor) {
-  const [open, setOpen] = useState(false);
-
-  function toggle(e) {
-    e.stopPropagation();
-    setOpen((prev) => !prev);
-  }
-
-  function pickColor(c) {
-    onChangeColor(tag.id, c);
-    setOpen(false);
-  }
-
-  return { open, toggle, pickColor };
-}

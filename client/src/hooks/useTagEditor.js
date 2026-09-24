@@ -5,6 +5,7 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
   const [color, setColor] = useState(TAG_COLORS[0]);
+  const [visibility, setVisibility] = useState('private');
   const [highlight, setHighlight] = useState(-1);
 
   const attachedIds = new Set(item.tags.map((t) => t.id));
@@ -16,6 +17,7 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   function reset() {
     setQuery('');
     setColor(TAG_COLORS[0]);
+    setVisibility('private');
     setHighlight(-1);
     setAdding(false);
   }
@@ -43,7 +45,7 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
       if (exactMatch) {
         if (!attachedIds.has(exactMatch.id)) await onAttach(item.id, exactMatch);
       } else {
-        const tag = await onCreateTag(name, color);
+        const tag = await onCreateTag(name, color, visibility);
         await onAttach(item.id, tag);
       }
       reset();
@@ -84,6 +86,8 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
     query,
     setQuery: updateQuery,
     color,
+    visibility,
+    setVisibility,
     highlight,
     setHighlight,
     suggestions,

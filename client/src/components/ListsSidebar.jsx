@@ -1,35 +1,69 @@
-import { FolderIcon, TrashIcon, ShareIcon, PencilIcon, ClockIcon } from './icons';
-import { TAG_COLORS } from '../constants/tagColors';
-import ColorSwatchPicker from './ColorSwatchPicker';
+import { useMemo, useState } from 'react';
+import { FolderIcon, TrashIcon, ShareIcon, PencilIcon, ClockIcon, SearchIcon } from './icons';
 import ListNameForm from './ListNameForm';
-import { useListsSidebar, useTagDot } from '../hooks/useListsSidebar';
+import TagEditModal from './TagEditModal';
+import { useListsSidebar } from '../hooks/useListsSidebar';
 import { isOwner } from '../constants/roles';
 
-function TagDot({ tag, active, onChangeColor }) {
-  const { open, toggle, pickColor } = useTagDot(tag, onChangeColor);
+function SidebarSearch({ value, onChange, placeholder }) {
+  return (
+    <div className="mb-1 flex items-center gap-2 rounded-full border border-[#dadce0] px-3 py-1 dark:border-[#5f6368]">
+      <SearchIcon className="h-3.5 w-3.5 shrink-0 text-[#9aa0a6]" />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent text-xs text-[#202124] placeholder:text-[#9aa0a6] focus:outline-none dark:text-[#e8eaed]"
+      />
+    </div>
+  );
+}
+
+function TagRow({ tag, active, currentUserId, onSelectTag, onSaveTag, onDeleteTag }) {
+  const [editing, setEditing] = useState(false);
+  const canManage = tag.ownerId === currentUserId;
 
   return (
-    <span className="relative shrink-0">
+    <div
+      className={`group relative flex items-center gap-4 rounded-r-full px-4 py-2 text-sm ${
+        active
+          ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
+          : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
+      }`}
+    >
       <button
         type="button"
-        onClick={toggle}
-        aria-label={`Change color for ${tag.name}`}
-        className={`block h-3.5 w-3.5 rounded-full ${active ? 'ring-2 ring-offset-1 ring-[#1a73e8] dark:ring-offset-[#202124]' : ''}`}
+        onClick={() => canManage && setEditing(true)}
+        aria-label={canManage ? `Edit ${tag.name}` : undefined}
+        className={`block h-3.5 w-3.5 shrink-0 rounded-full ${active ? 'ring-2 ring-offset-1 ring-[#1a73e8] dark:ring-offset-[#202124]' : ''}`}
         style={{ backgroundColor: tag.color }}
       />
-      {open && (
-        <div
-          className="absolute left-0 top-full z-20 mt-1 w-28 rounded-lg border border-[#dadce0] bg-white p-2 shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ColorSwatchPicker
-            colors={TAG_COLORS}
-            selectedColor={tag.color}
-            onPick={(_e, c) => pickColor(c)}
-          />
+      <button onClick={() => onSelectTag(tag.id)} className="min-w-0 flex-1 truncate text-left" title={tag.name}>
+        {tag.name}
+      </button>
+      {canManage && (
+        <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center rounded-full bg-inherit opacity-0 group-hover:opacity-100">
+          <button
+            onClick={() => setEditing(true)}
+            aria-label={`Edit ${tag.name}`}
+            className="rounded-full p-1.5 text-[#9aa0a6] hover:bg-[#e0e0e0] hover:text-[#1a73e8] dark:hover:bg-[#5f6368]"
+          >
+            <PencilIcon className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => onDeleteTag(tag.id)}
+            aria-label={`Delete ${tag.name}`}
+            className="rounded-full p-1.5 text-[#9aa0a6] hover:bg-[#e0e0e0] hover:text-[#d93025] dark:hover:bg-[#5f6368]"
+          >
+            <TrashIcon className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
-    </span>
+      {canManage && (
+        <TagEditModal open={editing} onClose={() => setEditing(false)} tag={tag} onSave={onSaveTag} />
+      )}
+    </div>
   );
 }
 
@@ -46,12 +80,32 @@ export default function ListsSidebar({
   tags,
   activeTagId,
   onSelectTag,
-  onChangeTagColor,
+  onSaveTag,
+  onDeleteTag,
+  currentUserId,
+  width,
 }) {
   const { editing, startCreating, startRenaming, stopEditing } = useListsSidebar();
+  const [listQuery, setListQuery] = useState('');
+  const [tagQuery, setTagQuery] = useState('');
+
+  const visibleLists = useMemo(
+    () =>
+      lists.filter(
+        (l) => l.id === editing || l.name.toLowerCase().includes(listQuery.trim().toLowerCase())
+      ),
+    [lists, listQuery, editing]
+  );
+  const visibleTags = useMemo(
+    () => (tags || []).filter((t) => t.name.toLowerCase().includes(tagQuery.trim().toLowerCase())),
+    [tags, tagQuery]
+  );
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col overflow-y-auto bg-white px-3 py-4 dark:bg-[#202124]">
+    <aside
+      style={width ? { width } : undefined}
+      className="flex w-60 shrink-0 flex-col overflow-y-auto bg-white px-3 py-4 dark:bg-[#202124]"
+    >
       {editing === 'new' ? (
         <ListNameForm
           inputId="new-list-name"
@@ -108,7 +162,17 @@ export default function ListsSidebar({
           </p>
         )}
 
-        {lists.map((list) =>
+        {lists.length > 4 && (
+          <div className="px-4">
+            <SidebarSearch value={listQuery} onChange={setListQuery} placeholder="Search lists…" />
+          </div>
+        )}
+
+        {visibleLists.length === 0 && listQuery && (
+          <p className="px-4 py-2 text-xs text-[#9aa0a6]">No lists match &ldquo;{listQuery}&rdquo;.</p>
+        )}
+
+        {visibleLists.map((list) =>
           editing === list.id ? (
             <ListNameForm
               key={list.id}
@@ -172,30 +236,31 @@ export default function ListsSidebar({
 
         {tags && tags.length > 0 && (
           <p className="mb-1 mt-4 px-4 text-xs font-medium uppercase tracking-wide text-[#80868b] dark:text-[#9aa0a6]">
-            Labels
+            Tags
           </p>
         )}
 
-        {tags &&
-          tags.map((tag) => (
-            <div
-              key={tag.id}
-              className={`flex items-center gap-4 rounded-r-full px-4 py-2 text-sm ${
-                activeTagId === tag.id
-                  ? 'bg-[#e8f0fe] font-medium text-[#1a73e8] dark:bg-[#3c4043]'
-                  : 'text-[#3c4043] hover:bg-[#f1f3f4] dark:text-[#e8eaed] dark:hover:bg-[#292a2d]'
-              }`}
-            >
-              <TagDot tag={tag} active={activeTagId === tag.id} onChangeColor={onChangeTagColor} />
-              <button
-                onClick={() => onSelectTag(tag.id)}
-                className="min-w-0 flex-1 truncate text-left"
-                title={tag.name}
-              >
-                {tag.name}
-              </button>
-            </div>
-          ))}
+        {tags && tags.length > 4 && (
+          <div className="px-4">
+            <SidebarSearch value={tagQuery} onChange={setTagQuery} placeholder="Search tags…" />
+          </div>
+        )}
+
+        {tags && visibleTags.length === 0 && tagQuery && (
+          <p className="px-4 py-2 text-xs text-[#9aa0a6]">No tags match &ldquo;{tagQuery}&rdquo;.</p>
+        )}
+
+        {visibleTags.map((tag) => (
+          <TagRow
+            key={tag.id}
+            tag={tag}
+            active={activeTagId === tag.id}
+            currentUserId={currentUserId}
+            onSelectTag={onSelectTag}
+            onSaveTag={onSaveTag}
+            onDeleteTag={onDeleteTag}
+          />
+        ))}
       </nav>
     </aside>
   );

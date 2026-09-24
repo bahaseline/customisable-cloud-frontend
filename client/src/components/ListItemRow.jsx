@@ -5,7 +5,7 @@ export default function ListItemRow({
   item,
   allTags,
   canEdit = true,
-  canLabel = true,
+  canTag = true,
   onRemove,
   onAttachTag,
   onDetachTag,
@@ -34,7 +34,7 @@ export default function ListItemRow({
           </button>
         )}
       </div>
-      {canLabel && (
+      {canTag && (
         <TagEditor
           item={item}
           allTags={allTags}

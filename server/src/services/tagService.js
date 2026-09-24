@@ -1,27 +1,59 @@
 const { queryOne, queryRows, execute } = require('../db');
 
-async function createTag(ownerId, name, color) {
+const TAG_FIELDS = 'id, owner_id, name, color, visibility, created_at';
+
+async function createTag(ownerId, name, color, visibility = 'private') {
   return queryOne(
-    `INSERT INTO tags (owner_id, name, color)
-     VALUES ($1, $2, COALESCE($3, '#1a73e8'))
-     ON CONFLICT (owner_id, name) DO UPDATE SET name = EXCLUDED.name
-     RETURNING id, owner_id, name, color, created_at`,
-    [ownerId, name, color]
+    `INSERT INTO tags (owner_id, name, color, visibility)
+     VALUES ($1, $2, COALESCE($3, '#1a73e8'), $4)
+     ON CONFLICT (owner_id, name)
+       DO UPDATE SET name = EXCLUDED.name
+     RETURNING ${TAG_FIELDS}`,
+    [ownerId, name, color, visibility]
   );
 }
 
-async function getTagsForUser(ownerId) {
+// Every tag the user owns, private or shared, plus — when listId is given —
+// any other member's shared tag that's already attached to at least one
+// item on that list (only if the requester actually has access to it). A
+// shared tag with no attachments yet on a list you're browsing simply
+// hasn't reached anyone there, so it stays invisible until it does.
+async function getTagsForUser(ownerId, listId) {
   return queryRows(
-    'SELECT id, owner_id, name, color, created_at FROM tags WHERE owner_id = $1 ORDER BY name',
-    [ownerId]
+    `SELECT t.id, t.owner_id, t.name, t.color, t.visibility, t.created_at
+     FROM tags t
+     WHERE t.owner_id = $1
+        OR (
+          t.visibility = 'shared'
+          AND EXISTS (
+            SELECT 1 FROM list_item_tags lit
+            JOIN list_items li ON li.id = lit.list_item_id
+            WHERE lit.tag_id = t.id AND li.list_id = $2
+          )
+          AND EXISTS (
+            SELECT 1 FROM custom_lists cl
+            LEFT JOIN list_members lm ON lm.list_id = cl.id AND lm.user_id = $1
+            WHERE cl.id = $2 AND (cl.owner_id = $1 OR lm.user_id = $1)
+          )
+        )
+     ORDER BY name`,
+    [ownerId, listId || null]
   );
 }
 
 async function updateTagColor(tagId, ownerId, color) {
   return queryOne(
     `UPDATE tags SET color = $3 WHERE id = $1 AND owner_id = $2
-     RETURNING id, owner_id, name, color, created_at`,
+     RETURNING ${TAG_FIELDS}`,
     [tagId, ownerId, color]
+  );
+}
+
+async function setTagVisibility(tagId, ownerId, visibility) {
+  return queryOne(
+    `UPDATE tags SET visibility = $3 WHERE id = $1 AND owner_id = $2
+     RETURNING ${TAG_FIELDS}`,
+    [tagId, ownerId, visibility]
   );
 }
 
@@ -29,11 +61,51 @@ async function deleteTag(tagId, ownerId) {
   return queryOne('DELETE FROM tags WHERE id = $1 AND owner_id = $2 RETURNING id', [tagId, ownerId]);
 }
 
-async function getTagOwnedBy(tagId, ownerId) {
-  return queryOne('SELECT id, owner_id, name, color FROM tags WHERE id = $1 AND owner_id = $2', [
-    tagId,
-    ownerId,
-  ]);
+// A tag a user may browse items by: one they own outright, or a shared tag
+// already attached to at least one item on a list they belong to.
+async function getTagUsableBy(tagId, userId) {
+  return queryOne(
+    `SELECT ${TAG_FIELDS} FROM tags t
+     WHERE t.id = $1
+       AND (
+         t.owner_id = $2
+         OR (
+           t.visibility = 'shared' AND EXISTS (
+             SELECT 1 FROM list_item_tags lit
+             JOIN list_items li ON li.id = lit.list_item_id
+             JOIN custom_lists cl ON cl.id = li.list_id
+             LEFT JOIN list_members lm ON lm.list_id = cl.id AND lm.user_id = $2
+             WHERE lit.tag_id = t.id AND (cl.owner_id = $2 OR lm.user_id = $2)
+           )
+         )
+       )`,
+    [tagId, userId]
+  );
+}
+
+// A tag a user may attach/detach on an item inside one specific list: one
+// they own outright, or a shared tag already attached to at least one item
+// on that same list. List access itself is verified upstream by
+// requireListAccess, so this only checks the tag's own reach — a shared tag
+// that hasn't reached this list yet isn't usable here (only its owner can
+// be the one to introduce it, since the owner_id branch has no such
+// requirement).
+async function getTagUsableInList(tagId, userId, listId) {
+  return queryOne(
+    `SELECT ${TAG_FIELDS} FROM tags t
+     WHERE t.id = $1
+       AND (
+         t.owner_id = $2
+         OR (
+           t.visibility = 'shared' AND EXISTS (
+             SELECT 1 FROM list_item_tags lit
+             JOIN list_items li ON li.id = lit.list_item_id
+             WHERE lit.tag_id = t.id AND li.list_id = $3
+           )
+         )
+       )`,
+    [tagId, userId, listId]
+  );
 }
 
 async function attachTag(listItemId, tagId) {
@@ -69,8 +141,10 @@ module.exports = {
   createTag,
   getTagsForUser,
   updateTagColor,
+  setTagVisibility,
   deleteTag,
-  getTagOwnedBy,
+  getTagUsableBy,
+  getTagUsableInList,
   attachTag,
   detachTag,
   getItemsByTag,

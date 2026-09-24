@@ -1,4 +1,4 @@
-import { XIcon } from './icons';
+import { ShareIcon, XIcon } from './icons';
 
 export default function TagChip({ tag, onRemove }) {
   return (
@@ -6,6 +6,7 @@ export default function TagChip({ tag, onRemove }) {
       style={{ backgroundColor: `${tag.color}22`, color: tag.color }}
       className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs"
     >
+      {tag.visibility === 'shared' && <ShareIcon className="h-2.5 w-2.5 shrink-0" />}
       {tag.name}
       {onRemove && (
         <button onClick={onRemove} aria-label={`Remove tag ${tag.name}`} className="rounded-full hover:opacity-70">

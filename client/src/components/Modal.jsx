@@ -7,7 +7,7 @@ export default function Modal({ open, onClose, header, children, maxWidth = 'max
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-start justify-center bg-black/40 pt-24" onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         className={`flex max-h-[70vh] w-full ${maxWidth} flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-[#292a2d]`}
         onClick={(e) => e.stopPropagation()}

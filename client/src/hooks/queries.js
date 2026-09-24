@@ -61,10 +61,11 @@ export function useListDetail(listId) {
   return { ...query, items: query.data || [] };
 }
 
-export function useTags() {
+export function useTags(listId) {
   const query = useQuery({
-    queryKey: ['tags'],
-    queryFn: async () => (await apiClient.get('/api/tags')).data.tags,
+    queryKey: ['tags', listId || null],
+    queryFn: async () =>
+      (await apiClient.get('/api/tags', { params: listId ? { listId } : {} })).data.tags,
   });
   return { ...query, tags: query.data || [] };
 }
@@ -156,18 +157,36 @@ export function useRemoveMember(listId) {
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, color }) =>
-      apiClient.post('/api/tags', { name, color }).then((res) => res.data.tag),
+    mutationFn: ({ name, color, visibility }) =>
+      apiClient.post('/api/tags', { name, color, visibility }).then((res) => res.data.tag),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
   });
 }
 
-export function useUpdateTagColor() {
+export function useUpdateTag() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ tagId, color }) =>
-      apiClient.put(`/api/tags/${tagId}`, { color }).then((res) => res.data.tag),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+    mutationFn: ({ tagId, color, visibility }) =>
+      apiClient.put(`/api/tags/${tagId}`, { color, visibility }).then((res) => res.data.tag),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+}
+
+export function useDeleteTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tagId) => apiClient.delete(`/api/tags/${tagId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      // Deleting a tag cascades to list_item_tags server-side, so any list
+      // or tag-search views holding stale attached-tag chips need refetching.
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
   });
 }
 

@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { useFilesPage } from '../hooks/useFilesPage';
+import { useSidebarWidth } from '../hooks/useSidebarWidth';
 import TopBar from '../components/TopBar';
 import ListsSidebar from '../components/ListsSidebar';
 import FileRow from '../components/FileRow';
@@ -13,10 +14,12 @@ import Spinner from '../components/Spinner';
 import FilterDropdown from '../components/FilterDropdown';
 import AddFileModal from '../components/AddFileModal';
 import ShareListModal from '../components/ShareListModal';
+import { GripIcon } from '../components/icons';
 import { ACCESS_HINTS } from '../constants/roles';
 
 export default function FilesPage() {
   const { user, logout } = useAuth();
+  const { width: sidebarWidth, startResizing } = useSidebarWidth();
   const {
     lists,
     allTags,
@@ -53,13 +56,14 @@ export default function FilesPage() {
     handleSelectTag,
     handleSelectFrequent,
     handleDeleteList,
+    handleDeleteTag,
     onCreateList,
     onRenameList,
     onAddToList,
     onAddFileToActiveList,
     onRemoveFromList,
     onCreateTag,
-    onChangeTagColor,
+    onSaveTag,
     onAttachTag,
     onDetachTag,
   } = useFilesPage();
@@ -88,8 +92,22 @@ export default function FilesPage() {
           tags={allTags}
           activeTagId={activeTagId}
           onSelectTag={handleSelectTag}
-          onChangeTagColor={onChangeTagColor}
+          onSaveTag={onSaveTag}
+          onDeleteTag={handleDeleteTag}
+          currentUserId={user?.id}
+          width={sidebarWidth}
         />
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onMouseDown={startResizing}
+          className="group relative w-2.5 shrink-0 cursor-col-resize"
+        >
+          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#e0e0e0] group-hover:bg-[#dadce0] group-active:bg-[#1a73e8] dark:bg-[#3c4043] dark:group-hover:bg-[#5f6368]" />
+          <GripIcon className="absolute left-1/2 top-1/2 h-6 w-2 -translate-x-1/2 -translate-y-1/2 text-[#bdc1c6] opacity-70 group-hover:text-[#5f6368] group-hover:opacity-100 group-active:text-[#1a73e8] dark:text-[#5f6368] dark:group-hover:text-[#9aa0a6]" />
+        </div>
 
         <main className="flex-1 overflow-y-auto">
           <div className="flex items-center justify-between border-b border-[#e0e0e0] px-6 py-4 dark:border-[#3c4043]">
@@ -100,7 +118,7 @@ export default function FilesPage() {
                   : activeList
                     ? activeList.name
                     : activeTag
-                      ? `Label: ${activeTag.name}`
+                      ? `Tag: ${activeTag.name}`
                       : 'All Drive Files'}
               </h1>
               {activeList && !isOwner && (
@@ -225,7 +243,7 @@ export default function FilesPage() {
                   item={item}
                   allTags={allTags}
                   canEdit={canEdit}
-                  canLabel={!!activeList}
+                  canTag={!!activeList}
                   onRemove={onRemoveFromList}
                   onAttachTag={onAttachTag}
                   onDetachTag={onDetachTag}
@@ -236,7 +254,7 @@ export default function FilesPage() {
           )}
 
           {!loading && activeTagId && visibleTagItems.length === 0 && !error && (
-            <EmptyState message={search ? 'No files match your search.' : 'No files carry this label yet.'} />
+            <EmptyState message={search ? 'No files match your search.' : 'No files carry this tag yet.'} />
           )}
           {!loading && activeTagId && visibleTagItems.length > 0 && (
             <div>

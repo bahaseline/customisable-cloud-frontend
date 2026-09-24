@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { TAG_COLORS } from '../constants/tagColors';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import TagChip from './TagChip';
+import { ShareIcon } from './icons';
 import { useTagEditor } from '../hooks/useTagEditor';
 
 export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateTag }) {
@@ -11,6 +12,8 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
     query,
     setQuery,
     color,
+    visibility,
+    setVisibility,
     highlight,
     setHighlight,
     suggestions,
@@ -43,7 +46,7 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
-            placeholder="Search or create a label…"
+            placeholder="Search or create a tag…"
             className="w-52 rounded-full border border-[#dadce0] px-3 py-1 text-xs focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed]"
           />
 
@@ -65,6 +68,11 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
                         style={{ backgroundColor: tag.color }}
                       />
                       <span className="truncate">{tag.name}</span>
+                      {tag.visibility === 'shared' && (
+                        <span title="Shared — visible to anyone who can see a file it's on" className="ml-auto flex shrink-0">
+                          <ShareIcon className="h-3 w-3 text-[#5f6368] dark:text-[#9aa0a6]" />
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -73,7 +81,7 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
 
             {suggestions.length === 0 && !canCreate && (
               <p className="px-3 py-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6]">
-                All your labels are already on this file.
+                All your tags are already on this file.
               </p>
             )}
 
@@ -83,6 +91,43 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
                 <div className="mb-2">
                   <ColorSwatchPicker colors={TAG_COLORS} selectedColor={color} onPick={handlePickColor} />
                 </div>
+
+                <div className="mb-2">
+                  <p className="mb-1.5 text-[#5f6368] dark:text-[#9aa0a6]">Visible to</p>
+                  <div className="flex overflow-hidden rounded-full border border-[#dadce0] dark:border-[#5f6368]">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setVisibility('private');
+                      }}
+                      className={`flex-1 px-2.5 py-1 text-center transition-colors ${
+                        visibility === 'private'
+                          ? 'bg-[#1a73e8] text-white'
+                          : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
+                      }`}
+                    >
+                      Only me
+                    </button>
+                    <button
+                      type="button"
+                      title="Anyone who can see a file you've tagged with this can see and use the tag too"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setVisibility('shared');
+                      }}
+                      className={`flex flex-1 items-center justify-center gap-1 px-2.5 py-1 text-center transition-colors ${
+                        visibility === 'shared'
+                          ? 'bg-[#1a73e8] text-white'
+                          : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
+                      }`}
+                    >
+                      <ShareIcon className="h-3 w-3 shrink-0" />
+                      Everyone
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1a73e8] px-3 py-2 text-xs font-medium text-white hover:bg-[#1765cc]"

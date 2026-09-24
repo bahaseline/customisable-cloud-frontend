@@ -101,7 +101,7 @@ npm run lint     # lint only
 npm test         # tests only
 ```
 
-There are 18 backend tests. They use the `ista1_test` database and clear it
+There are 44 backend tests. They use the `ista1_test` database and clear it
 before each run, so the normal database is not affected.
 
 ## Project structure
@@ -137,16 +137,20 @@ are in hooks, and TanStack Query handles the data coming from the server.
 
 ## Some design decisions
 
-**No sessions on the server.** After Google login the user gets a JWT, so the
-server does not need to store anything. The Drive tokens are encrypted before
-being saved in the database.
+**Short-lived access tokens, revocable refresh tokens.** After Google login the
+user gets a 15-minute JWT access token plus a long-lived refresh token, only
+the hash of which is stored server-side. Logging out revokes it (and the
+underlying Google grant), which a stateless JWT alone could never support.
+The Drive tokens are encrypted before being saved in the database.
 
 **Permissions are checked on the server.** The UI hides buttons but that is not
 the real protection, the middleware is. If a list is not shared with you the API
 returns 404 instead of 403, because a 403 would tell you the list exists.
 
-**Tags are personal.** Like Gmail labels, each member only sees and manages their
-own tags on a shared list. List contents are shared; personal organisation is not.
+**Tags are private by default, shareable on purpose.** Like Gmail labels, a tag
+you create is only ever visible to you — unless you mark it shared, in which
+case it becomes visible to anyone who can see a file you've tagged with it.
+Sharing isn't tied to a particular list, it's a property of the tag itself.
 
 **File preview goes through the server.** Google's preview needs a cookie that
 an iframe cannot send, so private files showed a login screen. Now the server

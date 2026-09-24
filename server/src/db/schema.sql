@@ -50,18 +50,17 @@ EXCEPTION
   WHEN duplicate_table THEN NULL;
 END $$;
 
--- Tags (Gmail-label style) — owned per user and private to that user even on
--- shared lists. Other members never see someone else's labels.
+-- Tags (for categorizing list items)
 CREATE TABLE IF NOT EXISTS tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR NOT NULL,
   color VARCHAR NOT NULL DEFAULT '#1a73e8',
+  visibility VARCHAR NOT NULL DEFAULT 'private',
   created_at TIMESTAMP DEFAULT NOW(),
+  CONSTRAINT tags_visibility_check CHECK (visibility IN ('private', 'shared')),
   UNIQUE (owner_id, name)
 );
-
-ALTER TABLE tags ADD COLUMN IF NOT EXISTS color VARCHAR NOT NULL DEFAULT '#1a73e8';
 
 -- Many-to-many: a list item can have several tags, a tag can apply to several items
 CREATE TABLE IF NOT EXISTS list_item_tags (

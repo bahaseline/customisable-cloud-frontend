@@ -154,3 +154,16 @@ export function ChevronDownIcon({ className }) {
     </svg>
   );
 }
+
+export function GripIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 24" fill="currentColor" className={className}>
+      <circle cx="2" cy="5" r="1.3" />
+      <circle cx="6" cy="5" r="1.3" />
+      <circle cx="2" cy="12" r="1.3" />
+      <circle cx="6" cy="12" r="1.3" />
+      <circle cx="2" cy="19" r="1.3" />
+      <circle cx="6" cy="19" r="1.3" />
+    </svg>
+  );
+}

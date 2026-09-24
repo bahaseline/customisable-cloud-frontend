@@ -4,31 +4,57 @@ const { keysToCamel } = require('../utils/camelCase');
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 async function createTag(req, res) {
-  const { name, color } = req.body;
+  const { name, color, visibility = 'private' } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'name is required' });
   }
   if (color && !HEX_COLOR.test(color)) {
     return res.status(400).json({ error: 'color must be a hex value like #1a73e8' });
   }
-  const tag = await tagService.createTag(req.user.id, name, color);
+  if (!['private', 'shared'].includes(visibility)) {
+    return res.status(400).json({ error: "visibility must be 'private' or 'shared'" });
+  }
+
+  // Marking a tag 'shared' doesn't expose it to anyone by itself — that only
+  // happens once it's attached to an item someone else can see, which is
+  // already access-controlled by the list routes.
+  const tag = await tagService.createTag(req.user.id, name, color, visibility);
   res.status(201).json({ tag: keysToCamel(tag) });
 }
 
 async function getTags(req, res) {
-  const tags = await tagService.getTagsForUser(req.user.id);
+  const tags = await tagService.getTagsForUser(req.user.id, req.query.listId);
   res.json({ tags: keysToCamel(tags) });
 }
 
-async function updateTagColor(req, res) {
-  const { color } = req.body;
-  if (!color || !HEX_COLOR.test(color)) {
+async function updateTag(req, res) {
+  const { color, visibility } = req.body;
+
+  if (color !== undefined && !HEX_COLOR.test(color)) {
     return res.status(400).json({ error: 'color must be a hex value like #1a73e8' });
   }
-  const tag = await tagService.updateTagColor(req.params.tagId, req.user.id, color);
-  if (!tag) {
-    return res.status(404).json({ error: 'Tag not found' });
+  if (visibility !== undefined && !['private', 'shared'].includes(visibility)) {
+    return res.status(400).json({ error: "visibility must be 'private' or 'shared'" });
   }
+  if (color === undefined && visibility === undefined) {
+    return res.status(400).json({ error: 'Nothing to update' });
+  }
+
+  let tag;
+  if (visibility !== undefined) {
+    tag = await tagService.setTagVisibility(req.params.tagId, req.user.id, visibility);
+    if (!tag) {
+      return res.status(404).json({ error: 'Tag not found' });
+    }
+  }
+
+  if (color !== undefined) {
+    tag = await tagService.updateTagColor(req.params.tagId, req.user.id, color);
+    if (!tag) {
+      return res.status(404).json({ error: 'Tag not found' });
+    }
+  }
+
   res.json({ tag: keysToCamel(tag) });
 }
 
@@ -46,7 +72,7 @@ async function getItemsByTag(req, res) {
     return res.status(400).json({ error: 'tag query parameter is required' });
   }
 
-  const tag = await tagService.getTagOwnedBy(tagId, req.user.id);
+  const tag = await tagService.getTagUsableBy(tagId, req.user.id);
   if (!tag) {
     return res.status(404).json({ error: 'Tag not found' });
   }
@@ -61,7 +87,7 @@ async function attachTagToItem(req, res) {
     return res.status(400).json({ error: 'tagId is required' });
   }
 
-  const tag = await tagService.getTagOwnedBy(tagId, req.user.id);
+  const tag = await tagService.getTagUsableInList(tagId, req.user.id, req.list.id);
   if (!tag) {
     return res.status(404).json({ error: 'Tag not found' });
   }
@@ -71,7 +97,7 @@ async function attachTagToItem(req, res) {
 }
 
 async function detachTagFromItem(req, res) {
-  const tag = await tagService.getTagOwnedBy(req.params.tagId, req.user.id);
+  const tag = await tagService.getTagUsableInList(req.params.tagId, req.user.id, req.list.id);
   if (!tag) {
     return res.status(404).json({ error: 'Tag not found' });
   }
@@ -86,7 +112,7 @@ async function detachTagFromItem(req, res) {
 module.exports = {
   createTag,
   getTags,
-  updateTagColor,
+  updateTag,
   deleteTag,
   getItemsByTag,
   attachTagToItem,

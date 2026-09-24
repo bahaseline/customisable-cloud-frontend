@@ -12,7 +12,8 @@ import {
   useAddToList,
   useRemoveFromList,
   useCreateTag,
-  useUpdateTagColor,
+  useUpdateTag,
+  useDeleteTag,
   useAttachTag,
   useDetachTag,
 } from './queries';
@@ -31,14 +32,14 @@ export function useFilesPage() {
   const [view, setView] = useState(() => localStorage.getItem('fileView') || 'list');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [shareListId, setShareListId] = useState(null);
-  const [labelFilter, setLabelFilter] = useState(null);
+  const [tagFilter, setTagFilter] = useState(null);
   const [listFilter, setListFilter] = useState(null);
 
   const { files, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading: filesLoading, isError: filesError } =
     useFiles();
   const { lists } = useLists();
   const { items: listItems, isLoading: listItemsLoading, isError: listItemsError } = useListDetail(activeListId);
-  const { tags: allTags } = useTags();
+  const { tags: allTags } = useTags(activeListId);
   const { items: tagItems, isLoading: tagItemsLoading, isError: tagItemsError } = useTagItems(activeTagId);
   const {
     frequentFiles,
@@ -52,7 +53,8 @@ export function useFilesPage() {
   const addToList = useAddToList();
   const removeFromList = useRemoveFromList(activeListId);
   const createTag = useCreateTag();
-  const updateTagColor = useUpdateTagColor();
+  const updateTag = useUpdateTag();
+  const deleteTag = useDeleteTag();
   const attachTag = useAttachTag(activeListId);
   const detachTag = useDetachTag(activeListId);
 
@@ -80,7 +82,7 @@ export function useFilesPage() {
     setActiveTagId(null);
     setFrequentActive(false);
     setActiveListId(listId);
-    setLabelFilter(null);
+    setTagFilter(null);
     setListFilter(null);
   }
 
@@ -88,7 +90,7 @@ export function useFilesPage() {
     setActiveListId(null);
     setFrequentActive(false);
     setActiveTagId(tagId);
-    setLabelFilter(null);
+    setTagFilter(null);
     setListFilter(null);
   }
 
@@ -96,7 +98,7 @@ export function useFilesPage() {
     setActiveListId(null);
     setActiveTagId(null);
     setFrequentActive(true);
-    setLabelFilter(null);
+    setTagFilter(null);
     setListFilter(null);
   }
 
@@ -116,6 +118,25 @@ export function useFilesPage() {
     }
   }
 
+  async function handleDeleteTag(tagId) {
+    const tag = allTags.find((t) => t.id === tagId);
+    const confirmed = await confirm({
+      title: 'Delete this tag?',
+      message:
+        tag?.visibility === 'shared'
+          ? `"${tag?.name}" will be removed from every file it's on, for everyone on this list.`
+          : `"${tag?.name}" will be removed from every file it's on.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    deleteTag.mutate(tagId);
+    if (activeTagId === tagId) {
+      setActiveTagId(null);
+    }
+  }
+
   const activeList = lists.find((l) => l.id === activeListId);
   const activeTag = allTags.find((t) => t.id === activeTagId);
   const canEdit = roleCanEdit(activeList?.role);
@@ -127,7 +148,7 @@ export function useFilesPage() {
     : activeList
     ? `Search in "${activeList.name}"`
     : activeTag
-      ? `Search files labeled "${activeTag.name}"`
+      ? `Search files tagged "${activeTag.name}"`
       : 'Search in Drive';
 
   const loading = frequentActive
@@ -142,7 +163,7 @@ export function useFilesPage() {
     : activeListId
       ? listItemsError && 'Failed to load this list.'
       : activeTagId
-        ? tagItemsError && 'Failed to load items for this label.'
+        ? tagItemsError && 'Failed to load items for this tag.'
         : filesError && 'Failed to load files from Google Drive.';
 
   const visibleFiles = useMemo(
@@ -155,14 +176,14 @@ export function useFilesPage() {
         .filter(
           (i) =>
             (i.fileName || '').toLowerCase().includes(search.toLowerCase()) &&
-            (!labelFilter || i.tags.some((t) => t.id === labelFilter))
+            (!tagFilter || i.tags.some((t) => t.id === tagFilter))
         )
         .map((i) => ({
           ...i,
           addedByLabel:
             i.addedBy && i.addedBy !== user?.id ? i.addedByName || i.addedByEmail : null,
         })),
-    [listItems, search, labelFilter, user?.id]
+    [listItems, search, tagFilter, user?.id]
   );
   const visibleFrequentFiles = useMemo(
     () => frequentFiles.filter((f) => (f.fileName || '').toLowerCase().includes(search.toLowerCase())),
@@ -178,13 +199,13 @@ export function useFilesPage() {
     [tagItems, search, listFilter]
   );
 
-  const labelsInList = useMemo(() => {
+  const tagsInList = useMemo(() => {
     const seen = new Map();
     listItems.forEach((i) => i.tags.forEach((t) => seen.set(t.id, t)));
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [listItems]);
 
-  const listsInLabel = useMemo(() => {
+  const listsForTag = useMemo(() => {
     const ids = new Set(tagItems.map((i) => i.listId));
     return lists.filter((l) => ids.has(l.id));
   }, [tagItems, lists]);
@@ -196,10 +217,10 @@ export function useFilesPage() {
     activeTagId,
     lists,
     allTags,
-    labelsInList,
-    listsInLabel,
-    labelFilter,
-    setLabelFilter,
+    tagsInList,
+    listsForTag,
+    tagFilter,
+    setTagFilter,
     listFilter,
     setListFilter,
     onSelectList: handleSelectList,
@@ -247,13 +268,14 @@ export function useFilesPage() {
     handleSelectTag,
     handleSelectFrequent,
     handleDeleteList,
+    handleDeleteTag,
     onCreateList: (name) => createList.mutate(name),
     onRenameList: (listId, name) => renameList.mutate({ listId, name }),
     onAddToList: (listId, file) => addToList.mutate({ listId, file }),
     onAddFileToActiveList: (file) => addToList.mutate({ listId: activeListId, file }),
     onRemoveFromList: (itemId) => removeFromList.mutate(itemId),
-    onCreateTag: (name, color) => createTag.mutateAsync({ name, color }),
-    onChangeTagColor: (tagId, color) => updateTagColor.mutate({ tagId, color }),
+    onCreateTag: (name, color, visibility) => createTag.mutateAsync({ name, color, visibility }),
+    onSaveTag: (tagId, updates) => updateTag.mutateAsync({ tagId, ...updates }),
     onAttachTag: (itemId, tag) => attachTag.mutateAsync({ itemId, tag }),
     onDetachTag: (itemId, tagId) => detachTag.mutate({ itemId, tagId }),
   };
