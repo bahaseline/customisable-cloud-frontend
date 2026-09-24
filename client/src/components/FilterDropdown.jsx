@@ -10,7 +10,7 @@ function Row({ item, onClick }) {
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[#1a73e8] dark:text-[#8ab4f8]">
         {item.active && <CheckIcon className="h-4 w-4" />}
       </span>
-      {item.type === 'label' ? (
+      {item.type === 'tag' ? (
         <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
       ) : (
         <FolderIcon className="h-4 w-4 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />

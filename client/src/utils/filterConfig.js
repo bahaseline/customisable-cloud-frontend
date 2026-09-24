@@ -14,7 +14,7 @@ function filterGroups({ resetLabel, entities, activeId, onSelect, toItem }) {
   ];
 }
 
-const asLabel = (tag) => ({ key: tag.id, label: tag.name, type: 'label', color: tag.color });
+const asTag = (tag) => ({ key: tag.id, label: tag.name, type: 'tag', color: tag.color });
 const asList = (list) => ({ key: list.id, label: list.name, type: 'list' });
 
 export function buildFilterConfig({
@@ -22,36 +22,36 @@ export function buildFilterConfig({
   activeTagId,
   lists,
   allTags,
-  labelsInList,
-  listsInLabel,
-  labelFilter,
-  setLabelFilter,
+  tagsInList,
+  listsForTag,
+  tagFilter,
+  setTagFilter,
   listFilter,
   setListFilter,
   onSelectList,
   onSelectTag,
 }) {
   if (activeListId) {
-    const active = labelsInList.find((t) => t.id === labelFilter);
+    const active = tagsInList.find((t) => t.id === tagFilter);
     return {
-      buttonLabel: active ? `Label: ${active.name}` : 'Filter by label',
+      buttonLabel: active ? `Tag: ${active.name}` : 'Filter by tag',
       groups: filterGroups({
-        resetLabel: 'All labels',
-        entities: labelsInList,
-        activeId: labelFilter,
-        onSelect: setLabelFilter,
-        toItem: asLabel,
+        resetLabel: 'All tags',
+        entities: tagsInList,
+        activeId: tagFilter,
+        onSelect: setTagFilter,
+        toItem: asTag,
       }),
     };
   }
 
   if (activeTagId) {
-    const active = listsInLabel.find((l) => l.id === listFilter);
+    const active = listsForTag.find((l) => l.id === listFilter);
     return {
       buttonLabel: active ? `List: ${active.name}` : 'Filter by list',
       groups: filterGroups({
         resetLabel: 'All lists',
-        entities: listsInLabel,
+        entities: listsForTag,
         activeId: listFilter,
         onSelect: setListFilter,
         toItem: asList,
@@ -60,7 +60,7 @@ export function buildFilterConfig({
   }
 
   return {
-    buttonLabel: 'Browse lists & labels',
+    buttonLabel: 'Browse lists & tags',
     groups: [
       {
         items: [
@@ -78,8 +78,8 @@ export function buildFilterConfig({
         items: lists.map((l) => ({ ...asList(l), active: false, onSelect: () => onSelectList(l.id) })),
       },
       {
-        title: 'Labels',
-        items: allTags.map((t) => ({ ...asLabel(t), active: false, onSelect: () => onSelectTag(t.id) })),
+        title: 'Tags',
+        items: allTags.map((t) => ({ ...asTag(t), active: false, onSelect: () => onSelectTag(t.id) })),
       },
     ],
   };
