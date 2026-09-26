@@ -59,7 +59,7 @@ test('a shared tag with no attachments yet is invisible to everyone but its owne
   assert.ok(ownerTags.body.tags.some((t) => t.name === 'Not yet used'));
 });
 
-test('once the owner attaches a shared tag to an item, every member of that list can see and use it', async () => {
+test('once the owner attaches a shared tag to an item, every member of that list can see it', async () => {
   const owner = await createUser('owner2');
   const viewer = await createUser('viewer2');
 
@@ -81,18 +81,61 @@ test('once the owner attaches a shared tag to an item, every member of that list
 
   const viewerTags = await authed(request(app).get(`/api/tags?listId=${listId}`), viewer.token);
   assert.ok(viewerTags.body.tags.some((t) => t.name === 'Now visible'));
+});
 
-  // The viewer can now attach that same shared tag to a different item on
-  // the same list — it's reached them, so they can use it there too.
+test('attaching or detaching a shared tag requires editor access, even for a tag that has already reached the list', async () => {
+  const owner = await createUser('owner2b');
+  const editor = await createUser('editor2b');
+  const viewer = await createUser('viewer2b');
+
+  const list = await authed(request(app).post('/api/lists'), owner.token).send({ name: 'Shared Tag Permissions' });
+  const listId = list.body.list.id;
+  await addMember(listId, owner.token, editor.email, 'editor');
+  await addMember(listId, owner.token, viewer.email, 'viewer');
+
+  const tag = await authed(request(app).post('/api/tags'), owner.token).send({
+    name: 'Editor gated',
+    visibility: 'shared',
+  });
+  const item = await authed(request(app).post(`/api/lists/${listId}/items`), owner.token).send({
+    driveFileId: 'drive-file-gated-1',
+    fileName: 'Doc',
+  });
+  await authed(request(app).post(`/api/lists/${listId}/items/${item.body.item.id}/tags`), owner.token).send({
+    tagId: tag.body.tag.id,
+  });
+
   const secondItem = await authed(request(app).post(`/api/lists/${listId}/items`), owner.token).send({
-    driveFileId: 'drive-file-2',
+    driveFileId: 'drive-file-gated-2',
     fileName: 'Doc 2',
   });
+
+  // A viewer can see the shared tag by now, but attaching it is a change
+  // everyone else sees too — that requires editor access, same bar as
+  // adding or removing a file.
   const viewerAttach = await authed(
     request(app).post(`/api/lists/${listId}/items/${secondItem.body.item.id}/tags`),
     viewer.token
   ).send({ tagId: tag.body.tag.id });
-  assert.equal(viewerAttach.status, 204);
+  assert.equal(viewerAttach.status, 403);
+
+  const editorAttach = await authed(
+    request(app).post(`/api/lists/${listId}/items/${secondItem.body.item.id}/tags`),
+    editor.token
+  ).send({ tagId: tag.body.tag.id });
+  assert.equal(editorAttach.status, 204);
+
+  const viewerDetach = await authed(
+    request(app).delete(`/api/lists/${listId}/items/${secondItem.body.item.id}/tags/${tag.body.tag.id}`),
+    viewer.token
+  );
+  assert.equal(viewerDetach.status, 403);
+
+  const editorDetach = await authed(
+    request(app).delete(`/api/lists/${listId}/items/${secondItem.body.item.id}/tags/${tag.body.tag.id}`),
+    editor.token
+  );
+  assert.equal(editorDetach.status, 204);
 });
 
 test('a shared tag attached on one list stays invisible on a different list until it reaches that one too', async () => {

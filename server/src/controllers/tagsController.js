@@ -1,4 +1,5 @@
 const tagService = require('../services/tagService');
+const { ROLES, satisfies } = require('../constants/roles');
 const { keysToCamel } = require('../utils/camelCase');
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -91,6 +92,9 @@ async function attachTagToItem(req, res) {
   if (!tag) {
     return res.status(404).json({ error: 'Tag not found' });
   }
+  if (tag.visibility === 'shared' && !satisfies(req.listRole, ROLES.EDITOR)) {
+    return res.status(403).json({ error: 'This action requires editor access' });
+  }
 
   await tagService.attachTag(req.item.id, tagId);
   res.status(204).end();
@@ -100,6 +104,9 @@ async function detachTagFromItem(req, res) {
   const tag = await tagService.getTagUsableInList(req.params.tagId, req.user.id, req.list.id);
   if (!tag) {
     return res.status(404).json({ error: 'Tag not found' });
+  }
+  if (tag.visibility === 'shared' && !satisfies(req.listRole, ROLES.EDITOR)) {
+    return res.status(403).json({ error: 'This action requires editor access' });
   }
 
   const removed = await tagService.detachTag(req.item.id, req.params.tagId);

@@ -5,7 +5,9 @@ import TagChip from './TagChip';
 import { ShareIcon } from './icons';
 import { useTagEditor } from '../hooks/useTagEditor';
 
-export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateTag }) {
+export default function TagEditor({ item, allTags, canEdit = true, onAttach, onDetach, onCreateTag }) {
+  const attachableTags = canEdit ? allTags : allTags.filter((t) => t.visibility !== 'shared');
+
   const {
     adding,
     setAdding,
@@ -23,7 +25,7 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
     handleKeyDown,
     handlePickColor,
     handleBlur,
-  } = useTagEditor(item, allTags, onAttach, onCreateTag);
+  } = useTagEditor(item, attachableTags, onAttach, onCreateTag);
 
   // One editor per list item, so the id cannot be a constant.
   const inputId = useId();
@@ -31,7 +33,11 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {item.tags.map((tag) => (
-        <TagChip key={tag.id} tag={tag} onRemove={() => onDetach(item.id, tag.id)} />
+        <TagChip
+          key={tag.id}
+          tag={tag}
+          onRemove={canEdit || tag.visibility !== 'shared' ? () => onDetach(item.id, tag.id) : undefined}
+        />
       ))}
 
       {adding ? (
@@ -111,21 +117,33 @@ export default function TagEditor({ item, allTags, onAttach, onDetach, onCreateT
                     </button>
                     <button
                       type="button"
-                      title="Anyone who can see a file you've tagged with this can see and use the tag too"
+                      disabled={!canEdit}
+                      title={
+                        canEdit
+                          ? "Anyone who can see a file you've tagged with this can see and use the tag too"
+                          : 'Requires editor access on this list'
+                      }
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setVisibility('shared');
                       }}
                       className={`flex flex-1 items-center justify-center gap-1 px-2.5 py-1 text-center transition-colors ${
-                        visibility === 'shared'
-                          ? 'bg-[#1a73e8] text-white'
-                          : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
+                        !canEdit
+                          ? 'cursor-not-allowed text-[#c7cacd] dark:text-[#5f6368]'
+                          : visibility === 'shared'
+                            ? 'bg-[#1a73e8] text-white'
+                            : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
                       }`}
                     >
                       <ShareIcon className="h-3 w-3 shrink-0" />
                       Everyone
                     </button>
                   </div>
+                  {!canEdit && (
+                    <p className="mt-1 text-[10px] leading-snug text-[#9aa0a6]">
+                      You need editor access on this list to attach a shared tag.
+                    </p>
+                  )}
                 </div>
 
                 <button

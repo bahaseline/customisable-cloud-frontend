@@ -38,6 +38,7 @@ export default function ListItemRow({
         <TagEditor
           item={item}
           allTags={allTags}
+          canEdit={canEdit}
           onAttach={onAttachTag}
           onDetach={onDetachTag}
           onCreateTag={onCreateTag}
