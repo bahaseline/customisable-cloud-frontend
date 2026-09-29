@@ -6,7 +6,9 @@ import { ShareIcon } from './icons';
 import { useTagEditor } from '../hooks/useTagEditor';
 
 export default function TagEditor({ item, allTags, canEdit = true, onAttach, onDetach, onCreateTag }) {
-  const attachableTags = canEdit ? allTags : allTags.filter((t) => t.visibility !== 'shared');
+  // Without edit rights only personal (private) tags can be attached or removed.
+  const canChangeTag = (tag) => canEdit || tag.visibility !== 'shared';
+  const attachableTags = allTags.filter(canChangeTag);
 
   const {
     adding,
@@ -36,7 +38,7 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
         <TagChip
           key={tag.id}
           tag={tag}
-          onRemove={canEdit || tag.visibility !== 'shared' ? () => onDetach(item.id, tag.id) : undefined}
+          onRemove={canChangeTag(tag) ? () => onDetach(item.id, tag.id) : undefined}
         />
       ))}
 

@@ -57,6 +57,8 @@ export function useListDetail(listId) {
     queryKey: ['lists', listId],
     queryFn: async () => (await apiClient.get(`/api/lists/${listId}`)).data.items,
     enabled: !!listId,
+    // Poll so tags other members attach or remove show up without a reload.
+    refetchInterval: 15000,
   });
   return { ...query, items: query.data || [] };
 }

@@ -2,12 +2,24 @@ const { queryOne, queryRows, execute } = require('../db');
 
 const TAG_FIELDS = 'id, owner_id, name, color, visibility, created_at';
 
+// SQL condition: the owner of tag `t` can edit list `listExpr` (they own it
+// or are an editor on it). A shared tag only reaches a list's other members
+// through someone with edit rights there - a viewer's shared tag stays
+// personal on a list they can only view, same as a private one.
+function tagOwnerCanEdit(listExpr) {
+  return `EXISTS (
+    SELECT 1 FROM custom_lists ecl
+    LEFT JOIN list_members elm ON elm.list_id = ecl.id AND elm.user_id = t.owner_id
+    WHERE ecl.id = ${listExpr} AND (ecl.owner_id = t.owner_id OR elm.role = 'editor')
+  )`;
+}
+
 async function createTag(ownerId, name, color, visibility = 'private') {
   return queryOne(
     `INSERT INTO tags (owner_id, name, color, visibility)
      VALUES ($1, $2, COALESCE($3, '#1a73e8'), $4)
      ON CONFLICT (owner_id, name)
-       DO UPDATE SET name = EXCLUDED.name
+       DO UPDATE SET color = EXCLUDED.color, visibility = EXCLUDED.visibility
      RETURNING ${TAG_FIELDS}`,
     [ownerId, name, color, visibility]
   );
@@ -30,6 +42,7 @@ async function getTagsForUser(ownerId, listId) {
             JOIN list_items li ON li.id = lit.list_item_id
             WHERE lit.tag_id = t.id AND li.list_id = $2
           )
+          AND ${tagOwnerCanEdit('$2')}
           AND EXISTS (
             SELECT 1 FROM custom_lists cl
             LEFT JOIN list_members lm ON lm.list_id = cl.id AND lm.user_id = $1
@@ -76,6 +89,7 @@ async function getTagUsableBy(tagId, userId) {
              JOIN custom_lists cl ON cl.id = li.list_id
              LEFT JOIN list_members lm ON lm.list_id = cl.id AND lm.user_id = $2
              WHERE lit.tag_id = t.id AND (cl.owner_id = $2 OR lm.user_id = $2)
+               AND ${tagOwnerCanEdit('cl.id')}
            )
          )
        )`,
@@ -102,6 +116,7 @@ async function getTagUsableInList(tagId, userId, listId) {
              JOIN list_items li ON li.id = lit.list_item_id
              WHERE lit.tag_id = t.id AND li.list_id = $3
            )
+           AND ${tagOwnerCanEdit('$3')}
          )
        )`,
     [tagId, userId, listId]
@@ -129,15 +144,18 @@ async function getItemsByTag(ownerId, tagId) {
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at
      FROM list_items li
      JOIN list_item_tags lit ON lit.list_item_id = li.id
+     JOIN tags t ON t.id = lit.tag_id
      JOIN custom_lists cl ON cl.id = li.list_id
      LEFT JOIN list_members m ON m.list_id = cl.id AND m.user_id = $2
      WHERE lit.tag_id = $1 AND (cl.owner_id = $2 OR m.user_id = $2)
+       AND (t.owner_id = $2 OR ${tagOwnerCanEdit('cl.id')})
      ORDER BY li.added_at DESC`,
     [tagId, ownerId]
   );
 }
 
 module.exports = {
+  tagOwnerCanEdit,
   createTag,
   getTagsForUser,
   updateTagColor,

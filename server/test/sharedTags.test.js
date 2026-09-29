@@ -308,3 +308,44 @@ test('switching a tag from shared back to private hides it again, even where it 
   const hiddenAfter = await authed(request(app).get(`/api/tags?listId=${listId}`), viewer.token);
   assert.ok(!hiddenAfter.body.tags.some((t) => t.name === 'Toggled'));
 });
+
+test('a viewer can tag files with private tags only, and their shared tags never reach the list', async () => {
+  const owner = await createUser('owner9');
+  const viewer = await createUser('viewer9');
+
+  const list = await authed(request(app).post('/api/lists'), owner.token).send({ name: 'Viewer Tags' });
+  const listId = list.body.list.id;
+  await addMember(listId, owner.token, viewer.email, 'viewer');
+  const item = await authed(request(app).post(`/api/lists/${listId}/items`), owner.token).send({
+    driveFileId: 'drive-file-viewer-tags',
+    fileName: 'Doc',
+  });
+  const itemTagsUrl = `/api/lists/${listId}/items/${item.body.item.id}/tags`;
+
+  const sharedTag = await authed(request(app).post('/api/tags'), viewer.token).send({
+    name: 'Viewer shared',
+    visibility: 'shared',
+  });
+  const sharedAttach = await authed(request(app).post(itemTagsUrl), viewer.token).send({
+    tagId: sharedTag.body.tag.id,
+  });
+  assert.equal(sharedAttach.status, 403);
+
+  const privateTag = await authed(request(app).post('/api/tags'), viewer.token).send({ name: 'Viewer private' });
+  const privateAttach = await authed(request(app).post(itemTagsUrl), viewer.token).send({
+    tagId: privateTag.body.tag.id,
+  });
+  assert.equal(privateAttach.status, 204);
+
+  await authed(request(app).put(`/api/tags/${privateTag.body.tag.id}`), viewer.token).send({ visibility: 'shared' });
+  const ownerView = await authed(request(app).get(`/api/lists/${listId}`), owner.token);
+  assert.deepEqual(ownerView.body.items[0].tags, []);
+  const viewerView = await authed(request(app).get(`/api/lists/${listId}`), viewer.token);
+  assert.deepEqual(viewerView.body.items[0].tags.map((t) => t.name), ['Viewer private']);
+
+  const detach = await authed(
+    request(app).delete(`${itemTagsUrl}/${privateTag.body.tag.id}`),
+    viewer.token
+  );
+  assert.equal(detach.status, 403);
+});

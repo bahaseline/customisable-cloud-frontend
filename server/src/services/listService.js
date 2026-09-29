@@ -1,4 +1,5 @@
 const { queryOne, queryRows, execute } = require('../db');
+const { tagOwnerCanEdit } = require('./tagService');
 
 async function createList(ownerId, name) {
   return queryOne(
@@ -72,20 +73,27 @@ async function getItemInList(listId, itemId) {
   );
 }
 
-// Tags are personal (Gmail-style): each member only sees labels they own.
-// Showing others' labels on a shared list can feel like surveillance.
+// Each member sees their own tags (private or shared) plus every shared tag
+// whose owner can edit this list. Other members' private tags - and a
+// viewer's shared tags - stay hidden from everyone but their owner.
 async function getItemsForList(listId, userId) {
   return queryRows(
     `SELECT li.id, li.list_id, li.drive_file_id, li.file_name, li.added_by, li.added_at,
             u.name AS added_by_name, u.email AS added_by_email,
             COALESCE(
-              json_agg(json_build_object('id', t.id, 'name', t.name, 'color', t.color))
-                FILTER (WHERE t.id IS NOT NULL),
+              json_agg(
+                json_build_object(
+                  'id', t.id, 'name', t.name, 'color', t.color,
+                  'visibility', t.visibility, 'ownerId', t.owner_id
+                ) ORDER BY t.name
+              ) FILTER (WHERE t.id IS NOT NULL),
               '[]'
             ) AS tags
      FROM list_items li
      LEFT JOIN list_item_tags lit ON lit.list_item_id = li.id
-     LEFT JOIN tags t ON t.id = lit.tag_id AND t.owner_id = $2
+     LEFT JOIN tags t ON t.id = lit.tag_id AND (
+       t.owner_id = $2 OR (t.visibility = 'shared' AND ${tagOwnerCanEdit('$1')})
+     )
      LEFT JOIN users u ON u.id = li.added_by
      WHERE li.list_id = $1
      GROUP BY li.id, u.name, u.email
