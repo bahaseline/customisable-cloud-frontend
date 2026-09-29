@@ -21,6 +21,7 @@ import { buildFilterConfig } from '../utils/filterConfig';
 import { canEdit as roleCanEdit, isOwner as roleIsOwner } from '../constants/roles';
 import { useConfirm } from '../context/ConfirmContext';
 import { useAuth } from '../context/AuthContext';
+import { isShared } from '../constants/visibility';
 
 export function useFilesPage() {
   const confirm = useConfirm();
@@ -123,7 +124,7 @@ export function useFilesPage() {
     const confirmed = await confirm({
       title: 'Delete this tag?',
       message:
-        tag?.visibility === 'shared'
+        tag && isShared(tag)
           ? `"${tag?.name}" will be removed from every file it's on, for everyone on this list.`
           : `"${tag?.name}" will be removed from every file it's on.`,
       confirmLabel: 'Delete',

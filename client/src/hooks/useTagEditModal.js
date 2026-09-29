@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { VISIBILITY } from '../constants/visibility';
+import { errorMessage } from '../api/errorMessage';
 
 export function useTagEditModal(tag, onSave, open) {
   const [color, setColor] = useState('#1a73e8');
-  const [visibility, setVisibility] = useState('private');
+  const [visibility, setVisibility] = useState(VISIBILITY.PRIVATE);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const wasOpen = useRef(false);
@@ -26,7 +28,7 @@ export function useTagEditModal(tag, onSave, open) {
       await onSave(tag.id, { color, visibility });
       return true;
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not save this tag.');
+      setError(errorMessage(err, 'Could not save this tag.'));
       return false;
     } finally {
       setSaving(false);
@@ -44,7 +46,7 @@ export function useTagEditModal(tag, onSave, open) {
       await onSave(tag.id, { color, visibility: newVisibility });
     } catch (err) {
       setVisibility(previous);
-      setError(err.response?.data?.error || 'Could not change who can see this tag.');
+      setError(errorMessage(err, 'Could not change who can see this tag.'));
     } finally {
       setSaving(false);
     }

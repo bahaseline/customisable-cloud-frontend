@@ -4,10 +4,12 @@ import ColorSwatchPicker from './ColorSwatchPicker';
 import TagChip from './TagChip';
 import { ShareIcon } from './icons';
 import { useTagEditor } from '../hooks/useTagEditor';
+import VisibilityToggle from './VisibilityToggle';
+import { isShared } from '../constants/visibility';
 
 export default function TagEditor({ item, allTags, canEdit = true, onAttach, onDetach, onCreateTag }) {
   // Without edit rights only personal (private) tags can be attached or removed.
-  const canChangeTag = (tag) => canEdit || tag.visibility !== 'shared';
+  const canChangeTag = (tag) => canEdit || !isShared(tag);
   const attachableTags = allTags.filter(canChangeTag);
 
   const {
@@ -55,10 +57,10 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
             placeholder="Search or create a tag…"
-            className="w-52 rounded-full border border-[#dadce0] px-3 py-1 text-xs focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#292a2d] dark:text-[#e8eaed]"
+            className="w-52 rounded-full border border-grey-300 px-3 py-1 text-xs focus:border-primary focus:outline-none dark:border-grey-700 dark:bg-grey-850 dark:text-grey-200"
           />
 
-          <div className="absolute left-0 top-full z-10 mt-1 w-52 overflow-hidden rounded-lg border border-[#dadce0] bg-white text-xs shadow-lg dark:border-[#5f6368] dark:bg-[#292a2d]">
+          <div className="absolute left-0 top-full z-10 mt-1 w-52 overflow-hidden rounded-lg border border-grey-300 bg-white text-xs shadow-lg dark:border-grey-700 dark:bg-grey-850">
             {suggestions.length > 0 && (
               <ul className="max-h-44 overflow-y-auto py-1">
                 {suggestions.map((tag, i) => (
@@ -67,8 +69,8 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
                       type="button"
                       onMouseDown={() => handleSelect(tag)}
                       onMouseEnter={() => setHighlight(i)}
-                      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e8eaed] ${
-                        highlight === i ? 'bg-[#f1f3f4] dark:bg-[#3c4043]' : ''
+                      className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-grey-800 dark:text-grey-200 ${
+                        highlight === i ? 'bg-grey-100 dark:bg-grey-800' : ''
                       }`}
                     >
                       <span
@@ -76,9 +78,9 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
                         style={{ backgroundColor: tag.color }}
                       />
                       <span className="truncate">{tag.name}</span>
-                      {tag.visibility === 'shared' && (
+                      {isShared(tag) && (
                         <span title="Shared — visible to anyone who can see a file it's on" className="ml-auto flex shrink-0">
-                          <ShareIcon className="h-3 w-3 text-[#5f6368] dark:text-[#9aa0a6]" />
+                          <ShareIcon className="h-3 w-3 text-grey-700 dark:text-grey-500" />
                         </span>
                       )}
                     </button>
@@ -88,61 +90,28 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
             )}
 
             {suggestions.length === 0 && !canCreate && (
-              <p className="px-3 py-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6]">
+              <p className="px-3 py-2.5 text-center text-grey-700 dark:text-grey-500">
                 All your tags are already on this file.
               </p>
             )}
 
             {canCreate && (
-              <div className={`px-3 py-2 ${suggestions.length > 0 ? 'border-t border-[#e0e0e0] dark:border-[#3c4043]' : ''}`}>
-                <p className="mb-1.5 text-[#5f6368] dark:text-[#9aa0a6]">Pick a colour</p>
+              <div className={`px-3 py-2 ${suggestions.length > 0 ? 'border-t border-grey-250 dark:border-grey-800' : ''}`}>
+                <p className="mb-1.5 text-grey-700 dark:text-grey-500">Pick a colour</p>
                 <div className="mb-2">
                   <ColorSwatchPicker colors={TAG_COLORS} selectedColor={color} onPick={handlePickColor} />
                 </div>
 
                 <div className="mb-2">
-                  <p className="mb-1.5 text-[#5f6368] dark:text-[#9aa0a6]">Visible to</p>
-                  <div className="flex overflow-hidden rounded-full border border-[#dadce0] dark:border-[#5f6368]">
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setVisibility('private');
-                      }}
-                      className={`flex-1 px-2.5 py-1 text-center transition-colors ${
-                        visibility === 'private'
-                          ? 'bg-[#1a73e8] text-white'
-                          : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
-                      }`}
-                    >
-                      Only me
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!canEdit}
-                      title={
-                        canEdit
-                          ? "Anyone who can see a file you've tagged with this can see and use the tag too"
-                          : 'Requires editor access on this list'
-                      }
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setVisibility('shared');
-                      }}
-                      className={`flex flex-1 items-center justify-center gap-1 px-2.5 py-1 text-center transition-colors ${
-                        !canEdit
-                          ? 'cursor-not-allowed text-[#c7cacd] dark:text-[#5f6368]'
-                          : visibility === 'shared'
-                            ? 'bg-[#1a73e8] text-white'
-                            : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
-                      }`}
-                    >
-                      <ShareIcon className="h-3 w-3 shrink-0" />
-                      Everyone
-                    </button>
-                  </div>
+                  <p className="mb-1.5 text-grey-700 dark:text-grey-500">Visible to</p>
+                  <VisibilityToggle
+                    compact
+                    value={visibility}
+                    onChange={setVisibility}
+                    sharedDisabledReason={canEdit ? undefined : 'Requires editor access on this list'}
+                  />
                   {!canEdit && (
-                    <p className="mt-1 text-[10px] leading-snug text-[#9aa0a6]">
+                    <p className="mt-1 text-[10px] leading-snug text-grey-500">
                       You need editor access on this list to attach a shared tag.
                     </p>
                   )}
@@ -150,7 +119,7 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
 
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1a73e8] px-3 py-2 text-xs font-medium text-white hover:bg-[#1765cc]"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-hover"
                 >
                   <span className="text-sm leading-none">+</span>
                   Create “{query.trim()}”
@@ -162,7 +131,7 @@ export default function TagEditor({ item, allTags, canEdit = true, onAttach, onD
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="rounded-full border border-dashed border-[#dadce0] px-2.5 py-0.5 text-xs text-[#5f6368] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
+          className="rounded-full border border-dashed border-grey-300 px-2.5 py-0.5 text-xs text-grey-700 hover:bg-grey-100 dark:border-grey-700 dark:text-grey-500 dark:hover:bg-grey-800"
         >
           + tag
         </button>

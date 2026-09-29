@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { TAG_COLORS } from '../constants/tagColors';
+import { VISIBILITY } from '../constants/visibility';
 
 export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
   const [color, setColor] = useState(TAG_COLORS[0]);
-  const [visibility, setVisibility] = useState('private');
+  const [visibility, setVisibility] = useState(VISIBILITY.PRIVATE);
   const [highlight, setHighlight] = useState(-1);
 
   const attachedIds = new Set(item.tags.map((t) => t.id));
@@ -17,7 +18,7 @@ export function useTagEditor(item, allTags, onAttach, onCreateTag) {
   function reset() {
     setQuery('');
     setColor(TAG_COLORS[0]);
-    setVisibility('private');
+    setVisibility(VISIBILITY.PRIVATE);
     setHighlight(-1);
     setAdding(false);
   }

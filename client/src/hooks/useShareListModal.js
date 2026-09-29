@@ -3,6 +3,7 @@ import { useAddMember, useListMembers, useRemoveMember } from './queries';
 import { ROLES } from '../constants/roles';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
+import { errorMessage } from '../api/errorMessage';
 
 export function useShareListModal(listId, open) {
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export function useShareListModal(listId, open) {
       await addMember.mutateAsync({ email: email.trim(), role });
       setEmail('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not share this list.');
+      setError(errorMessage(err, 'Could not share this list.'));
     }
   }
 
@@ -49,7 +50,7 @@ export function useShareListModal(listId, open) {
       try {
         await addMember.mutateAsync({ email: memberEmail, role: newRole });
       } catch (err) {
-        showToast(err.response?.data?.error || 'Could not change this person’s access.');
+        showToast(errorMessage(err, 'Could not change this person’s access.'));
       }
     },
     handleRemove: async (userId) => {

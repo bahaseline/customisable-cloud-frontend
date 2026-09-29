@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { TAG_COLORS } from '../constants/tagColors';
+import { VISIBILITY } from '../constants/visibility';
+import { errorMessage } from '../api/errorMessage';
 
 export function useTagCreateModal(onCreate, open) {
   const [name, setName] = useState('');
   const [color, setColor] = useState(TAG_COLORS[0]);
-  const [visibility, setVisibility] = useState('private');
+  const [visibility, setVisibility] = useState(VISIBILITY.PRIVATE);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -12,7 +14,7 @@ export function useTagCreateModal(onCreate, open) {
     if (!open) return;
     setName('');
     setColor(TAG_COLORS[0]);
-    setVisibility('private');
+    setVisibility(VISIBILITY.PRIVATE);
     setError(null);
   }, [open]);
 
@@ -23,7 +25,7 @@ export function useTagCreateModal(onCreate, open) {
       await onCreate(name.trim(), color, visibility);
       return true;
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not create this tag.');
+      setError(errorMessage(err, 'Could not create this tag.'));
       return false;
     } finally {
       setSaving(false);
