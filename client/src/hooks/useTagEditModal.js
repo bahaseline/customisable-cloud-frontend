@@ -33,5 +33,22 @@ export function useTagEditModal(tag, onSave, open) {
     }
   }
 
-  return { color, setColor, visibility, setVisibility, error, saving, handleSave };
+  // The visibility toggle looks like an instant switch, so it saves the
+  // moment it's clicked instead of waiting for the separate Save button
+  async function handleVisibilityChange(newVisibility) {
+    const previous = visibility;
+    setVisibility(newVisibility);
+    setError(null);
+    setSaving(true);
+    try {
+      await onSave(tag.id, { color, visibility: newVisibility });
+    } catch (err) {
+      setVisibility(previous);
+      setError(err.response?.data?.error || 'Could not change who can see this tag.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return { color, setColor, visibility, error, saving, handleSave, handleVisibilityChange };
 }

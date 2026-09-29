@@ -92,6 +92,7 @@ export default function FilesPage() {
           tags={allTags}
           activeTagId={activeTagId}
           onSelectTag={handleSelectTag}
+          onCreateTag={onCreateTag}
           onSaveTag={onSaveTag}
           onDeleteTag={handleDeleteTag}
           currentUserId={user?.id}

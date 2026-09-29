@@ -4,7 +4,7 @@ import { TAG_COLORS } from '../constants/tagColors';
 import { useTagEditModal } from '../hooks/useTagEditModal';
 
 export default function TagEditModal({ open, onClose, tag, onSave }) {
-  const { color, setColor, visibility, setVisibility, error, saving, handleSave } = useTagEditModal(
+  const { color, setColor, visibility, error, saving, handleSave, handleVisibilityChange } = useTagEditModal(
     tag,
     onSave,
     open
@@ -41,8 +41,9 @@ export default function TagEditModal({ open, onClose, tag, onSave }) {
           <div className="flex overflow-hidden rounded-full border border-[#dadce0] text-sm dark:border-[#5f6368]">
             <button
               type="button"
-              onClick={() => setVisibility('private')}
-              className={`flex-1 px-3 py-1.5 text-center transition-colors ${
+              disabled={saving}
+              onClick={() => handleVisibilityChange('private')}
+              className={`flex-1 px-3 py-1.5 text-center transition-colors disabled:opacity-50 ${
                 visibility === 'private'
                   ? 'bg-[#1a73e8] text-white'
                   : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
@@ -52,9 +53,10 @@ export default function TagEditModal({ open, onClose, tag, onSave }) {
             </button>
             <button
               type="button"
+              disabled={saving}
               title="Anyone who can see a file you've tagged with this can see and use the tag too"
-              onClick={() => setVisibility('shared')}
-              className={`flex-1 px-3 py-1.5 text-center transition-colors ${
+              onClick={() => handleVisibilityChange('shared')}
+              className={`flex-1 px-3 py-1.5 text-center transition-colors disabled:opacity-50 ${
                 visibility === 'shared'
                   ? 'bg-[#1a73e8] text-white'
                   : 'text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]'
