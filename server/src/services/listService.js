@@ -130,6 +130,15 @@ async function addMember(listId, userId, role) {
   return member;
 }
 
+async function updateMemberRole(listId, userId, role) {
+  return queryOne(
+    `UPDATE list_members SET role = $3
+     WHERE list_id = $1 AND user_id = $2
+     RETURNING id, list_id, user_id, role, added_at`,
+    [listId, userId, role]
+  );
+}
+
 async function removeMember(listId, userId) {
   const removed = await queryOne(
     'DELETE FROM list_members WHERE list_id = $1 AND user_id = $2 RETURNING user_id',
@@ -155,5 +164,6 @@ module.exports = {
   getItemsForList,
   getMembersForList,
   addMember,
+  updateMemberRole,
   removeMember,
 };

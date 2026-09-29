@@ -19,7 +19,7 @@ function MemberRow({ member, onChangeRole, onRemove }) {
       ) : (
         <select
           value={member.role}
-          onChange={(e) => onChangeRole(member.email, e.target.value)}
+          onChange={(e) => onChangeRole(member.userId, e.target.value)}
           aria-label={`Access level for ${member.email}`}
           className="shrink-0 rounded-lg border border-grey-300 px-2 py-1 text-xs text-grey-800 focus:border-primary focus:outline-none dark:border-grey-700 dark:bg-grey-900 dark:text-grey-200"
         >

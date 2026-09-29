@@ -68,6 +68,7 @@ export function useTags(listId) {
     queryKey: ['tags', listId || null],
     queryFn: async () =>
       (await apiClient.get('/api/tags', { params: listId ? { listId } : {} })).data.tags,
+    refetchInterval: listId ? 15000 : false,
   });
   return { ...query, tags: query.data || [] };
 }
@@ -145,6 +146,16 @@ export function useAddMember(listId) {
   });
 }
 
+export function useUpdateMemberRole(listId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    meta: { silent: true },
+    mutationFn: ({ userId, role }) =>
+      apiClient.put(`/api/lists/${listId}/members/${userId}`, { role }).then((res) => res.data.member),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lists', listId, 'members'] }),
+  });
+}
+
 export function useRemoveMember(listId) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -159,6 +170,7 @@ export function useRemoveMember(listId) {
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
+    meta: { silent: true },
     mutationFn: ({ name, color, visibility }) =>
       apiClient.post('/api/tags', { name, color, visibility }).then((res) => res.data.tag),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
@@ -168,6 +180,7 @@ export function useCreateTag() {
 export function useUpdateTag() {
   const queryClient = useQueryClient();
   return useMutation({
+    meta: { silent: true },
     mutationFn: ({ tagId, color, visibility }) =>
       apiClient.put(`/api/tags/${tagId}`, { color, visibility }).then((res) => res.data.tag),
     onSuccess: () => {

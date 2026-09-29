@@ -85,6 +85,18 @@ async function addMember(req, res) {
   });
 }
 
+async function updateMember(req, res) {
+  const { role } = req.body;
+  if (!ASSIGNABLE_ROLES.includes(role)) {
+    return res.status(400).json({ error: `role must be one of: ${ASSIGNABLE_ROLES.join(', ')}` });
+  }
+  const member = await listService.updateMemberRole(req.list.id, req.params.userId, role);
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+  res.json({ member: keysToCamel(member) });
+}
+
 async function removeMember(req, res) {
   const removed = await listService.removeMember(req.list.id, req.params.userId);
   if (!removed) {
@@ -103,5 +115,6 @@ module.exports = {
   removeItem,
   getMembers,
   addMember,
+  updateMember,
   removeMember,
 };

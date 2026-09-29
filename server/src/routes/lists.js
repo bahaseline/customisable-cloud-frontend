@@ -43,6 +43,7 @@ router.delete(
 // Membership is owner-managed; any member may see who else has access.
 router.get('/:listId/members', requireListAccess(ROLES.VIEWER), listsController.getMembers);
 router.post('/:listId/members', requireListAccess(ROLES.OWNER), listsController.addMember);
+router.put('/:listId/members/:userId', requireListAccess(ROLES.OWNER), listsController.updateMember);
 router.delete('/:listId/members/:userId', requireListAccess(ROLES.OWNER), listsController.removeMember);
 
 module.exports = router;
