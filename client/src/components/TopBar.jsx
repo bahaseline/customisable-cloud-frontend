@@ -1,9 +1,24 @@
+import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 import { SearchIcon } from './icons';
 import Logo from './Logo';
 
-function UserAvatar({ name, email }) {
+function UserAvatar({ name, email, picture }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const initial = (name || email || '?').charAt(0).toUpperCase();
+
+  if (picture && !imgFailed) {
+    return (
+      <img
+        src={picture}
+        alt={name || email || 'Account'}
+        referrerPolicy="no-referrer"
+        onError={() => setImgFailed(true)}
+        className="h-8 w-8 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+
   return (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-xs font-medium text-white">
       {initial}
@@ -36,7 +51,7 @@ export default function TopBar({ search, onSearchChange, user, onLogout, placeho
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
         <span className="hidden text-sm text-[#5f6368] sm:inline dark:text-[#9aa0a6]">{user?.email}</span>
-        <UserAvatar name={user?.name} email={user?.email} />
+        <UserAvatar name={user?.name} email={user?.email} picture={user?.picture} />
         <button
           onClick={onLogout}
           className="rounded-full border border-[#dadce0] px-4 py-1.5 text-sm font-medium text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"

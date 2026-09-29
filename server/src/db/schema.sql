@@ -6,10 +6,13 @@ CREATE TABLE IF NOT EXISTS users (
   google_id VARCHAR UNIQUE NOT NULL,
   email VARCHAR NOT NULL,
   name VARCHAR,
+  picture VARCHAR,           -- Google profile photo URL
   access_token TEXT,        -- encrypted
   refresh_token TEXT,       -- encrypted
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS picture VARCHAR;
 
 -- Custom file lists
 CREATE TABLE IF NOT EXISTS custom_lists (

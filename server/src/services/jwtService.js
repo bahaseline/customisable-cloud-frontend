@@ -8,7 +8,13 @@ const REFRESH_TOKEN_TTL_DAYS = 30;
 
 function signUserToken(user) {
   return jwt.sign(
-    { id: user.id, googleId: user.google_id, email: user.email, name: user.name },
+    {
+      id: user.id,
+      googleId: user.google_id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+    },
     process.env.JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   );
