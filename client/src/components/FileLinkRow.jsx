@@ -4,10 +4,10 @@ export default function FileLinkRow({ to, name, meta }) {
   return (
     <Link
       to={to}
-      className="flex items-center gap-4 border-b border-[#f1f3f4] px-4 py-2.5 hover:bg-[#f8f9fa] dark:border-[#3c4043] dark:hover:bg-[#292a2d]"
+      className="flex items-center gap-4 border-b border-grey-100 px-4 py-2.5 hover:bg-grey-50 dark:border-grey-800 dark:hover:bg-grey-850"
     >
-      <span className="min-w-0 flex-1 truncate text-sm text-[#3c4043] dark:text-[#e8eaed]">{name}</span>
-      {meta && <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">{meta}</span>}
+      <span className="min-w-0 flex-1 truncate text-sm text-grey-800 dark:text-grey-200">{name}</span>
+      {meta && <span className="shrink-0 text-xs text-grey-700 dark:text-grey-500">{meta}</span>}
     </Link>
   );
 }

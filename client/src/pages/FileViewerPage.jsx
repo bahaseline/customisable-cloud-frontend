@@ -18,17 +18,17 @@ export default function FileViewerPage() {
   const { file, kind, blobUrl, loading, error } = useFilePreview(fileId);
 
   return (
-    <div className="flex h-screen flex-col bg-white dark:bg-[#202124]">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-[#e0e0e0] px-4 dark:border-[#3c4043]">
+    <div className="flex h-screen flex-col bg-white dark:bg-grey-900">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-grey-250 px-4 dark:border-grey-800">
         <Link
           to="/files"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-grey-700 hover:bg-grey-100 dark:text-grey-500 dark:hover:bg-grey-800"
           aria-label="Back to files"
         >
           <BackIcon className="h-5 w-5" />
         </Link>
         {file && <img src={file.iconLink} alt="" className="h-5 w-5 shrink-0" />}
-        <h1 className="min-w-0 flex-1 truncate text-sm font-medium text-[#3c4043] dark:text-[#e8eaed]">
+        <h1 className="min-w-0 flex-1 truncate text-sm font-medium text-grey-800 dark:text-grey-200">
           {file?.name || 'Loading…'}
         </h1>
         {file && (
@@ -36,14 +36,14 @@ export default function FileViewerPage() {
             href={file.webViewLink}
             target="_blank"
             rel="noreferrer"
-            className="shrink-0 rounded-full border border-[#dadce0] px-3 py-1 text-xs font-medium text-[#5f6368] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
+            className="shrink-0 rounded-full border border-grey-300 px-3 py-1 text-xs font-medium text-grey-700 hover:bg-grey-100 dark:border-grey-700 dark:text-grey-500 dark:hover:bg-grey-800"
           >
             Open in Drive
           </a>
         )}
       </header>
 
-      <main className="flex-1 overflow-hidden bg-[#f8f9fa] dark:bg-[#202124]">
+      <main className="flex-1 overflow-hidden bg-grey-50 dark:bg-grey-900">
         {loading && (
           <Centered>
             <Spinner />
@@ -52,7 +52,7 @@ export default function FileViewerPage() {
 
         {!loading && error && (
           <Centered>
-            <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">{error}</p>
+            <p className="text-sm text-grey-700 dark:text-grey-500">{error}</p>
           </Centered>
         )}
 
@@ -69,13 +69,13 @@ export default function FileViewerPage() {
         {!loading && !error && FALLBACK_MESSAGES[kind] && (
           <Centered>
             <div>
-              <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">{FALLBACK_MESSAGES[kind]}</p>
+              <p className="text-sm text-grey-700 dark:text-grey-500">{FALLBACK_MESSAGES[kind]}</p>
               {file && kind !== 'folder' && (
                 <a
                   href={file.webViewLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-block rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white hover:bg-[#1765cc]"
+                  className="mt-4 inline-block rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
                 >
                   Open in Google Drive
                 </a>

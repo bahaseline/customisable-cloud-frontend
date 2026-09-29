@@ -15,7 +15,7 @@ export default function AddToListSelect({ file, lists, onAddToList, size = 'md' 
         id={selectId}
         name="addToList"
         aria-label={`Add ${file.name} to a list`}
-        className={`peer cursor-pointer appearance-none rounded-full text-transparent hover:bg-[#e8eaed] focus:outline-none dark:hover:bg-[#3c4043] ${dimensions}`}
+        className={`peer cursor-pointer appearance-none rounded-full text-transparent hover:bg-grey-200 focus:outline-none dark:hover:bg-grey-800 ${dimensions}`}
         defaultValue=""
         onChange={(e) => {
           if (e.target.value) {
@@ -34,7 +34,7 @@ export default function AddToListSelect({ file, lists, onAddToList, size = 'md' 
         ))}
       </select>
       <FolderPlusIcon
-        className={`pointer-events-none absolute inset-0 m-auto text-[#5f6368] dark:text-[#9aa0a6] ${iconSize}`}
+        className={`pointer-events-none absolute inset-0 m-auto text-grey-700 dark:text-grey-500 ${iconSize}`}
       />
     </div>
   );

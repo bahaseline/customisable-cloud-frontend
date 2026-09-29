@@ -17,7 +17,7 @@ export default function AddFileModal({
 
   const searchField = (
     <>
-      <SearchIcon className="h-5 w-5 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+      <SearchIcon className="h-5 w-5 shrink-0 text-grey-700 dark:text-grey-500" />
       <input
         id="add-file-search"
         name="fileSearch"
@@ -27,7 +27,7 @@ export default function AddFileModal({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search your Drive files…"
-        className="w-full bg-transparent text-sm text-[#202124] placeholder:text-[#5f6368] focus:outline-none dark:text-[#e8eaed] dark:placeholder:text-[#9aa0a6]"
+        className="w-full bg-transparent text-sm text-grey-900 placeholder:text-grey-700 focus:outline-none dark:text-grey-200 dark:placeholder:text-grey-500"
       />
     </>
   );
@@ -43,14 +43,14 @@ export default function AddFileModal({
               key={file.id}
               onClick={() => !added && onAdd(file)}
               disabled={added}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-[#f8f9fa] disabled:cursor-default dark:hover:bg-[#3c4043]"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-grey-50 disabled:cursor-default dark:hover:bg-grey-800"
             >
               <img src={file.iconLink} alt="" className="h-5 w-5 shrink-0" />
-              <span className="min-w-0 flex-1 truncate text-sm text-[#3c4043] dark:text-[#e8eaed]">
+              <span className="min-w-0 flex-1 truncate text-sm text-grey-800 dark:text-grey-200">
                 {file.name}
               </span>
               {added && (
-                <span className="flex shrink-0 items-center gap-1 text-xs text-[#188038] dark:text-[#81c995]">
+                <span className="flex shrink-0 items-center gap-1 text-xs text-success dark:text-success-light">
                   <CheckIcon className="h-3.5 w-3.5" />
                   Added
                 </span>
@@ -64,7 +64,7 @@ export default function AddFileModal({
             <button
               onClick={onLoadMore}
               disabled={isFetchingNextPage}
-              className="rounded-full border border-[#dadce0] px-4 py-1.5 text-xs font-medium text-[#1a73e8] hover:bg-[#eaf1fb] disabled:opacity-50 dark:border-[#5f6368] dark:hover:bg-[#3c4043]"
+              className="rounded-full border border-grey-300 px-4 py-1.5 text-xs font-medium text-primary hover:bg-[#eaf1fb] disabled:opacity-50 dark:border-grey-700 dark:hover:bg-grey-800"
             >
               {isFetchingNextPage ? 'Loading…' : 'Load more files'}
             </button>

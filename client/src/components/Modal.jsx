@@ -9,15 +9,15 @@ export default function Modal({ open, onClose, header, children, maxWidth = 'max
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className={`flex max-h-[70vh] w-full ${maxWidth} flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-[#292a2d]`}
+        className={`flex max-h-[70vh] w-full ${maxWidth} flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-grey-850`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[#e0e0e0] px-4 py-3 dark:border-[#3c4043]">
+        <div className="flex items-center gap-3 border-b border-grey-250 px-4 py-3 dark:border-grey-800">
           {header}
           <button
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 rounded-full p-1 text-[#5f6368] hover:bg-[#f1f3f4] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]"
+            className="shrink-0 rounded-full p-1 text-grey-700 hover:bg-grey-100 dark:text-grey-500 dark:hover:bg-grey-800"
           >
             <XIcon className="h-4 w-4" />
           </button>

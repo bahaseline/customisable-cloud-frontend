@@ -4,8 +4,29 @@
 
 @theme {
   --font-sans: 'Roboto', system-ui, Arial, sans-serif;
+
+  /* Google Material palette, as used across the UI. */
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1765cc;
+  --color-primary-soft: #e8f0fe;
+  --color-primary-light: #8ab4f8;
+  --color-danger: #d93025;
+  --color-danger-light: #f28b82;
+  --color-success: #188038;
+  --color-success-light: #81c995;
+  --color-grey-50: #f8f9fa;
+  --color-grey-100: #f1f3f4;
+  --color-grey-200: #e8eaed;
+  --color-grey-250: #e0e0e0;
+  --color-grey-300: #dadce0;
+  --color-grey-500: #9aa0a6;
+  --color-grey-600: #80868b;
+  --color-grey-700: #5f6368;
+  --color-grey-800: #3c4043;
+  --color-grey-850: #292a2d;
+  --color-grey-900: #202124;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-[#202124] dark:text-[#e8eaed];
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-grey-900 dark:text-grey-200;
 }

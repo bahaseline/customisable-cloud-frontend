@@ -27,19 +27,19 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 dark:from-[#202124] dark:via-[#202124] dark:to-[#1a2233]">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 dark:from-grey-900 dark:via-grey-900 dark:to-[#1a2233]">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50 dark:border-[#3c4043] dark:bg-[#292a2d] dark:shadow-none">
-        <Logo className="mx-auto mb-5 h-14 w-14 text-blue-600 dark:text-[#8ab4f8]" />
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-[#e8eaed]">Driveboard</h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-[#9aa0a6]">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50 dark:border-grey-800 dark:bg-grey-850 dark:shadow-none">
+        <Logo className="mx-auto mb-5 h-14 w-14 text-blue-600 dark:text-primary-light" />
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-grey-200">Driveboard</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-grey-500">
           Your frequently-used Google Drive files, organised in one place.
         </p>
         <a
           href={`${API_BASE_URL}/auth/google`}
-          className="mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow dark:border-[#5f6368] dark:bg-[#3c4043] dark:text-[#e8eaed] dark:hover:bg-[#4a4d51]"
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow dark:border-grey-700 dark:bg-grey-800 dark:text-grey-200 dark:hover:bg-[#4a4d51]"
         >
           <GoogleIcon />
           Sign in with Google

@@ -7,7 +7,7 @@ export default function AuthCallback() {
 
   return (
     <FullScreenCenter>
-      <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-[#9aa0a6]">
+      <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-grey-500">
         <Spinner />
         <p className="text-sm">Signing you in…</p>
       </div>

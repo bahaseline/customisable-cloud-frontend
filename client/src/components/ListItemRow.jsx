@@ -12,23 +12,23 @@ export default function ListItemRow({
   onCreateTag,
 }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-[#f1f3f4] px-4 py-3 hover:bg-[#f8f9fa] dark:border-[#3c4043] dark:hover:bg-[#292a2d]">
+    <div className="flex flex-col gap-2 border-b border-grey-100 px-4 py-3 hover:bg-grey-50 dark:border-grey-800 dark:hover:bg-grey-850">
       <div className="flex items-center gap-4">
         <Link
           to={`/file/${item.driveFileId}`}
-          className="min-w-0 flex-1 truncate text-sm text-[#3c4043] hover:underline dark:text-[#e8eaed]"
+          className="min-w-0 flex-1 truncate text-sm text-grey-800 hover:underline dark:text-grey-200"
         >
           {item.fileName}
         </Link>
         {item.addedByLabel && (
-          <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+          <span className="shrink-0 text-xs text-grey-700 dark:text-grey-500">
             added by {item.addedByLabel}
           </span>
         )}
         {canEdit && (
           <button
             onClick={() => onRemove(item.id)}
-            className="shrink-0 text-xs font-medium text-[#5f6368] hover:text-[#d93025] dark:text-[#9aa0a6]"
+            className="shrink-0 text-xs font-medium text-grey-700 hover:text-danger dark:text-grey-500"
           >
             Remove
           </button>

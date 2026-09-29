@@ -69,7 +69,7 @@ export default function FilesPage() {
   } = useFilesPage();
 
   return (
-    <div className="flex h-screen flex-col bg-white dark:bg-[#202124]">
+    <div className="flex h-screen flex-col bg-white dark:bg-grey-900">
       <TopBar
         search={search}
         onSearchChange={setSearch}
@@ -106,14 +106,14 @@ export default function FilesPage() {
           onMouseDown={startResizing}
           className="group relative w-2.5 shrink-0 cursor-col-resize"
         >
-          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#e0e0e0] group-hover:bg-[#dadce0] group-active:bg-[#1a73e8] dark:bg-[#3c4043] dark:group-hover:bg-[#5f6368]" />
-          <GripIcon className="absolute left-1/2 top-1/2 h-6 w-2 -translate-x-1/2 -translate-y-1/2 text-[#bdc1c6] opacity-70 group-hover:text-[#5f6368] group-hover:opacity-100 group-active:text-[#1a73e8] dark:text-[#5f6368] dark:group-hover:text-[#9aa0a6]" />
+          <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-grey-250 group-hover:bg-grey-300 group-active:bg-primary dark:bg-grey-800 dark:group-hover:bg-grey-700" />
+          <GripIcon className="absolute left-1/2 top-1/2 h-6 w-2 -translate-x-1/2 -translate-y-1/2 text-[#bdc1c6] opacity-70 group-hover:text-grey-700 group-hover:opacity-100 group-active:text-primary dark:text-grey-700 dark:group-hover:text-grey-500" />
         </div>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between border-b border-[#e0e0e0] px-6 py-4 dark:border-[#3c4043]">
+          <div className="flex items-center justify-between border-b border-grey-250 px-6 py-4 dark:border-grey-800">
             <div className="flex min-w-0 items-center gap-2">
-              <h1 className="truncate text-lg font-normal text-[#202124] dark:text-[#e8eaed]">
+              <h1 className="truncate text-lg font-normal text-grey-900 dark:text-grey-200">
                 {frequentActive
                   ? 'Frequently used'
                   : activeList
@@ -123,7 +123,7 @@ export default function FilesPage() {
                       : 'All Drive Files'}
               </h1>
               {activeList && !isOwner && (
-                <span className="shrink-0 rounded-full bg-[#f1f3f4] px-2 py-0.5 text-xs text-[#5f6368] dark:bg-[#3c4043] dark:text-[#9aa0a6]">
+                <span className="shrink-0 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-700 dark:bg-grey-800 dark:text-grey-500">
                   Shared with you · {ACCESS_HINTS[activeList.role]}
                 </span>
               )}
@@ -132,7 +132,7 @@ export default function FilesPage() {
               {activeListId && isOwner && (
                 <button
                   onClick={() => setShareListId(activeListId)}
-                  className="rounded-full border border-[#dadce0] px-3 py-1.5 text-sm font-medium text-[#3c4043] hover:bg-[#f1f3f4] dark:border-[#5f6368] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]"
+                  className="rounded-full border border-grey-300 px-3 py-1.5 text-sm font-medium text-grey-800 hover:bg-grey-100 dark:border-grey-700 dark:text-grey-200 dark:hover:bg-grey-800"
                 >
                   Share
                 </button>
@@ -140,7 +140,7 @@ export default function FilesPage() {
               {activeListId && canEdit && (
                 <button
                   onClick={() => setAddModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded-full bg-[#1a73e8] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1765cc]"
+                  className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
                 >
                   <span className="text-base leading-none">+</span>
                   Add file
@@ -175,7 +175,7 @@ export default function FilesPage() {
 
               {visibleFiles.length > 0 && view === 'list' && (
                 <>
-                  <div className="flex items-center border-b border-[#e0e0e0] px-4 py-2 text-xs font-medium text-[#5f6368] dark:border-[#3c4043] dark:text-[#9aa0a6]">
+                  <div className="flex items-center border-b border-grey-250 px-4 py-2 text-xs font-medium text-grey-700 dark:border-grey-800 dark:text-grey-500">
                     <span className="ml-9 flex-1">Name</span>
                     <span className="w-28 shrink-0 text-right">Last modified</span>
                   </div>
@@ -198,7 +198,7 @@ export default function FilesPage() {
                   <button
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}
-                    className="rounded-full border border-[#dadce0] px-5 py-2 text-sm font-medium text-[#1a73e8] hover:bg-[#eaf1fb] disabled:opacity-50 dark:border-[#5f6368] dark:hover:bg-[#3c4043]"
+                    className="rounded-full border border-grey-300 px-5 py-2 text-sm font-medium text-primary hover:bg-[#eaf1fb] disabled:opacity-50 dark:border-grey-700 dark:hover:bg-grey-800"
                   >
                     {isFetchingNextPage ? 'Loading…' : 'Load more files'}
                   </button>
