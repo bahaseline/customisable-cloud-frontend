@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "for f in test/*.test.js; do node --test \"$f\" || exit 1; done",
+    "test": "status=0; for f in test/*.test.js; do node --test \"$f\" || status=1; done; exit $status",
     "lint": "eslint ."
   },
   "keywords": [],

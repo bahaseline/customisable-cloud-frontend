@@ -260,20 +260,22 @@ test('only the tag creator can rename, re-visibility, or delete a tag, regardles
   assert.equal(creatorRecolors.status, 200);
 });
 
-test('a tag name is unique per owner regardless of visibility', async () => {
+test('a tag name is unique per owner: re-creating it updates its colour and visibility', async () => {
   const owner = await createUser('owner7');
 
   const first = await authed(request(app).post('/api/tags'), owner.token).send({ name: 'Reused' });
   const second = await authed(request(app).post('/api/tags'), owner.token).send({
     name: 'Reused',
+    color: '#d93025',
     visibility: 'shared',
   });
-  // Same owner + same name is the same row (upsert by name), but the upsert
-  // only ever touches name — visibility only changes via an explicit PUT,
-  // so posting 'shared' again does not silently promote the existing tag.
+  // Same owner + same name is the same row (upsert by name). Creating it
+  // again applies the new colour and visibility — the owner could already
+  // change both with a PUT, so this grants nothing new.
   assert.equal(second.status, 201);
   assert.equal(second.body.tag.id, first.body.tag.id);
-  assert.equal(second.body.tag.visibility, 'private');
+  assert.equal(second.body.tag.color, '#d93025');
+  assert.equal(second.body.tag.visibility, 'shared');
 });
 
 test('switching a tag from shared back to private hides it again, even where it had already reached', async () => {
