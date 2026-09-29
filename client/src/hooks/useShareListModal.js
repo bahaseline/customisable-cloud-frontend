@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useAddMember, useListMembers, useRemoveMember } from './queries';
 import { ROLES } from '../constants/roles';
 import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export function useShareListModal(listId, open) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState(ROLES.VIEWER);
   const [error, setError] = useState(null);
   const confirm = useConfirm();
+  const { showToast } = useToast();
 
   const { members, isLoading } = useListMembers(open ? listId : null);
   const addMember = useAddMember(listId);
@@ -43,6 +45,13 @@ export function useShareListModal(listId, open) {
     isLoading,
     isInviting: addMember.isPending,
     handleInvite,
+    handleChangeRole: async (memberEmail, newRole) => {
+      try {
+        await addMember.mutateAsync({ email: memberEmail, role: newRole });
+      } catch (err) {
+        showToast(err.response?.data?.error || 'Could not change this person’s access.');
+      }
+    },
     handleRemove: async (userId) => {
       const member = members.find((m) => m.userId === userId);
       const confirmed = await confirm({

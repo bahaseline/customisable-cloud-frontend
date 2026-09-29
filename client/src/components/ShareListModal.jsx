@@ -4,7 +4,7 @@ import Spinner from './Spinner';
 import { useShareListModal } from '../hooks/useShareListModal';
 import { ROLE_LABELS, isOwner } from '../constants/roles';
 
-function MemberRow({ member, onRemove }) {
+function MemberRow({ member, onChangeRole, onRemove }) {
   return (
     <li className="flex items-center gap-3 px-1 py-2">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a73e8] text-xs font-medium text-white">
@@ -14,7 +14,19 @@ function MemberRow({ member, onRemove }) {
         <p className="truncate text-sm text-[#202124] dark:text-[#e8eaed]">{member.name || member.email}</p>
         <p className="truncate text-xs text-[#5f6368] dark:text-[#9aa0a6]">{member.email}</p>
       </div>
-      <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">{ROLE_LABELS[member.role]}</span>
+      {isOwner(member.role) ? (
+        <span className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]">{ROLE_LABELS[member.role]}</span>
+      ) : (
+        <select
+          value={member.role}
+          onChange={(e) => onChangeRole(member.email, e.target.value)}
+          aria-label={`Access level for ${member.email}`}
+          className="shrink-0 rounded-lg border border-[#dadce0] px-2 py-1 text-xs text-[#3c4043] focus:border-[#1a73e8] focus:outline-none dark:border-[#5f6368] dark:bg-[#202124] dark:text-[#e8eaed]"
+        >
+          <option value="viewer">Can view</option>
+          <option value="editor">Can edit</option>
+        </select>
+      )}
       {!isOwner(member.role) && (
         <button
           onClick={() => onRemove(member.userId)}
@@ -29,8 +41,19 @@ function MemberRow({ member, onRemove }) {
 }
 
 export default function ShareListModal({ open, onClose, listId, listName }) {
-  const { email, setEmail, role, setRole, error, members, isLoading, isInviting, handleInvite, handleRemove } =
-    useShareListModal(listId, open);
+  const {
+    email,
+    setEmail,
+    role,
+    setRole,
+    error,
+    members,
+    isLoading,
+    isInviting,
+    handleInvite,
+    handleChangeRole,
+    handleRemove,
+  } = useShareListModal(listId, open);
 
   const title = (
     <h2 className="min-w-0 flex-1 truncate text-base font-medium text-[#202124] dark:text-[#e8eaed]">
@@ -88,7 +111,12 @@ export default function ShareListModal({ open, onClose, listId, listName }) {
         ) : (
           <ul>
             {members.map((member) => (
-              <MemberRow key={member.userId} member={member} onRemove={handleRemove} />
+              <MemberRow
+                key={member.userId}
+                member={member}
+                onChangeRole={handleChangeRole}
+                onRemove={handleRemove}
+              />
             ))}
           </ul>
         )}
