@@ -1,5 +1,7 @@
 # Driveboard
 
+[![CI](https://github.com/bahaseline/customisable-cloud-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/bahaseline/customisable-cloud-frontend/actions/workflows/ci.yml)
+
 A web app that lets you organise your Google Drive files into custom lists,
 label them with colours, and share those lists with other people.
 
