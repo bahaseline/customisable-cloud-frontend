@@ -49,6 +49,7 @@ apiClient.interceptors.response.use(
         // immediately, not just the one that happened to trigger this.
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        window.dispatchEvent(new Event('auth:signout'));
       }
     }
 

@@ -34,6 +34,12 @@ function appError(message, status) {
 function asAppError(err) {
   if (err.isAppError) return err;
 
+  // Google revoked the grant (testing-mode 7-day expiry, user revoked from
+  // Google Account settings, or too many outstanding tokens). Signal re-login.
+  if (err.message?.includes('invalid_grant') || err.message?.includes('Token has been expired or revoked')) {
+    return appError('Your Google session has expired. Please sign in again.', 401);
+  }
+
   const status = DRIVE_ERRORS[err.code] ? err.code : 502;
   const wrapped = new Error(DRIVE_ERRORS[status] || 'Failed to reach Google Drive');
   wrapped.status = status;
