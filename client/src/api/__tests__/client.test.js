@@ -45,20 +45,18 @@ function unauthorized() {
   return err;
 }
 
-async function loadClient() {
-  // Each test needs a module instance with a fresh `refreshPromise`.
+// Each test needs a fresh module, so the in-memory token and shared refresh
+// promise start empty.
+async function loadClient({ signedIn = true } = {}) {
   vi.resetModules();
-  return (await import('../client')).default;
+  const mod = await import('../client');
+  if (signedIn) mod.setAccessToken('expired-access');
+  return mod;
 }
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('accessToken', 'expired-access');
-  localStorage.setItem('refreshToken', 'valid-refresh');
-
-  postMock = vi.fn(async () => ({
-    data: { accessToken: 'fresh-access', refreshToken: 'rotated-refresh' },
-  }));
+  postMock = vi.fn(async () => ({ data: { accessToken: 'fresh-access' } }));
   handler = vi.fn(async () => ({ data: {} }));
 });
 
@@ -67,19 +65,42 @@ afterEach(() => {
 });
 
 describe('apiClient request interceptor', () => {
-  it('attaches the stored access token', async () => {
-    const apiClient = await loadClient();
+  it('attaches the in-memory access token', async () => {
+    const { default: apiClient } = await loadClient();
     await apiClient({ url: '/api/lists' });
 
     expect(handler.mock.calls[0][0].headers.Authorization).toBe('Bearer expired-access');
   });
 
   it('sends no Authorization header when signed out', async () => {
-    localStorage.clear();
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient({ signedIn: false });
     await apiClient({ url: '/api/lists' });
 
     expect(handler.mock.calls[0][0].headers.Authorization).toBeUndefined();
+  });
+});
+
+describe('refreshAccessToken', () => {
+  it('sends the refresh cookie with the CSRF header and no token in the body', async () => {
+    const { refreshAccessToken } = await loadClient();
+    await refreshAccessToken();
+
+    const [url, body, options] = postMock.mock.calls[0];
+    expect(url).toMatch(/\/auth\/refresh$/);
+    expect(body).toBeNull();
+    expect(options.withCredentials).toBe(true);
+    expect(options.headers['X-Requested-With']).toBe('XMLHttpRequest');
+  });
+
+  // Session restore can run twice at startup (React StrictMode). Two parallel
+  // refreshes would rotate the cookie twice and revoke each other.
+  it('shares one in-flight refresh between simultaneous callers', async () => {
+    const { refreshAccessToken } = await loadClient();
+    const [a, b] = await Promise.all([refreshAccessToken(), refreshAccessToken()]);
+
+    expect(postMock).toHaveBeenCalledTimes(1);
+    expect(a).toBe('fresh-access');
+    expect(b).toBe('fresh-access');
   });
 });
 
@@ -90,7 +111,7 @@ describe('apiClient refresh-on-401', () => {
       .mockRejectedValueOnce(unauthorized())
       .mockResolvedValue({ data: { lists: [] } });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     const res = await apiClient({ url: '/api/lists' });
 
     expect(res.data).toEqual({ lists: [] });
@@ -99,24 +120,23 @@ describe('apiClient refresh-on-401', () => {
     expect(handler.mock.calls[1][0].headers.Authorization).toBe('Bearer fresh-access');
   });
 
-  it('stores both rotated tokens', async () => {
+  it('keeps the new access token in memory and writes nothing to localStorage', async () => {
     handler = vi.fn().mockRejectedValueOnce(unauthorized()).mockResolvedValue({ data: {} });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     await apiClient({ url: '/api/lists' });
+    await apiClient({ url: '/api/tags' });
 
-    expect(localStorage.getItem('accessToken')).toBe('fresh-access');
-    expect(localStorage.getItem('refreshToken')).toBe('rotated-refresh');
+    expect(handler.mock.calls[2][0].headers.Authorization).toBe('Bearer fresh-access');
+    expect(localStorage.length).toBe(0);
   });
 
-  // The refresh flow is a single promise shared by all requests that fail with 401 while it is pending.
   it('collapses concurrent 401s into a single refresh', async () => {
     let releaseRefresh;
     postMock = vi.fn(
       () =>
         new Promise((resolve) => {
-          releaseRefresh = () =>
-            resolve({ data: { accessToken: 'fresh-access', refreshToken: 'rotated-refresh' } });
+          releaseRefresh = () => resolve({ data: { accessToken: 'fresh-access' } });
         })
     );
 
@@ -129,7 +149,7 @@ describe('apiClient refresh-on-401', () => {
       return { data: { url: config.url } };
     });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     const pending = Promise.all([
       apiClient({ url: '/api/lists' }),
       apiClient({ url: '/api/tags' }),
@@ -149,7 +169,7 @@ describe('apiClient refresh-on-401', () => {
       throw unauthorized();
     });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     await expect(apiClient({ url: '/api/lists' })).rejects.toMatchObject({
       response: { status: 401 },
     });
@@ -158,32 +178,24 @@ describe('apiClient refresh-on-401', () => {
     expect(handler).toHaveBeenCalledTimes(2);
   });
 
-  it('clears both tokens when the refresh token is itself rejected', async () => {
+  it('signs out and forgets the access token when the refresh cookie is rejected', async () => {
     handler = vi.fn(async () => {
       throw unauthorized();
     });
     postMock = vi.fn(async () => {
       throw new Error('refresh rejected');
     });
+    const onSignout = vi.fn();
+    window.addEventListener('auth:signout', onSignout);
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     await expect(apiClient({ url: '/api/lists' })).rejects.toBeTruthy();
+    window.removeEventListener('auth:signout', onSignout);
 
-    expect(localStorage.getItem('accessToken')).toBeNull();
-    expect(localStorage.getItem('refreshToken')).toBeNull();
-  });
-
-  it('does not attempt a refresh when there is no refresh token', async () => {
-    localStorage.removeItem('refreshToken');
-    handler = vi.fn(async () => {
-      throw unauthorized();
-    });
-
-    const apiClient = await loadClient();
-    await expect(apiClient({ url: '/api/lists' })).rejects.toBeTruthy();
-
-    expect(postMock).not.toHaveBeenCalled();
-    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(onSignout).toHaveBeenCalledTimes(1);
+    handler = vi.fn(async () => ({ data: {} }));
+    await apiClient({ url: '/api/lists' });
+    expect(handler.mock.calls[0][0].headers.Authorization).toBeUndefined();
   });
 
   // A failing /auth/refresh must not re-enter the refresh flow it is part of.
@@ -192,7 +204,7 @@ describe('apiClient refresh-on-401', () => {
       throw unauthorized();
     });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     await expect(apiClient({ url: '/auth/refresh' })).rejects.toBeTruthy();
 
     expect(postMock).not.toHaveBeenCalled();
@@ -206,12 +218,11 @@ describe('apiClient refresh-on-401', () => {
       throw serverError;
     });
 
-    const apiClient = await loadClient();
+    const { default: apiClient } = await loadClient();
     await expect(apiClient({ url: '/api/lists' })).rejects.toMatchObject({
       response: { status: 500 },
     });
 
     expect(postMock).not.toHaveBeenCalled();
-    expect(localStorage.getItem('accessToken')).toBe('expired-access');
   });
 });

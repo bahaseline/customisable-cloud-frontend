@@ -58,27 +58,48 @@ test('POST /auth/logout succeeds for a user with no stored Google tokens', async
   assert.equal(res.status, 204);
 });
 
-test('POST /auth/refresh without a refreshToken returns 400', async () => {
-  const res = await request(app).post('/auth/refresh').send({});
-  assert.equal(res.status, 400);
+function refresh(refreshToken) {
+  const req = request(app).post('/auth/refresh').set('X-Requested-With', 'XMLHttpRequest');
+  return refreshToken ? req.set('Cookie', `refreshToken=${refreshToken}`) : req;
+}
+
+function refreshCookieFrom(res) {
+  return (res.headers['set-cookie'] || []).find((c) => c.startsWith('refreshToken='));
+}
+
+test('POST /auth/refresh without the X-Requested-With header is rejected as a possible CSRF', async () => {
+  const res = await request(app).post('/auth/refresh').set('Cookie', 'refreshToken=anything');
+  assert.equal(res.status, 403);
 });
 
-test('POST /auth/refresh with an unknown token returns 401', async () => {
-  const res = await request(app).post('/auth/refresh').send({ refreshToken: 'not-a-real-token' });
+test('POST /auth/refresh without a refresh cookie returns 401', async () => {
+  const res = await refresh();
   assert.equal(res.status, 401);
 });
 
-test('a valid refresh token exchanges for a new access and refresh token, and is itself rotated out', async () => {
+test('POST /auth/refresh with an unknown token returns 401 and clears the cookie', async () => {
+  const res = await refresh('not-a-real-token');
+  assert.equal(res.status, 401);
+  assert.match(refreshCookieFrom(res), /^refreshToken=;/);
+});
+
+test('a valid refresh cookie exchanges for a new access token and a rotated, httpOnly cookie', async () => {
   const user = await createUser('refresh-flow');
   const refreshTokenService = require('../src/services/refreshTokenService');
   const { verifyUserToken } = require('../src/services/jwtService');
   const originalRefreshToken = await refreshTokenService.issueRefreshToken(user.id);
 
-  const res = await request(app).post('/auth/refresh').send({ refreshToken: originalRefreshToken });
+  const res = await refresh(originalRefreshToken);
   assert.equal(res.status, 200);
   assert.ok(res.body.accessToken);
-  assert.ok(res.body.refreshToken);
-  assert.notEqual(res.body.refreshToken, originalRefreshToken);
+  assert.equal(res.body.refreshToken, undefined, 'the refresh token must never appear in a response body');
+
+  const cookie = refreshCookieFrom(res);
+  assert.ok(cookie, 'a new refresh cookie should be set');
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Path=\/auth/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.ok(!cookie.startsWith(`refreshToken=${originalRefreshToken};`), 'the cookie should hold a rotated token');
 
   // The new access token authenticates, and carries the real user, not a
   // bare id with email/name silently dropped.
@@ -91,11 +112,11 @@ test('a valid refresh token exchanges for a new access and refresh token, and is
   assert.equal(whoAmI.body.user.id, user.id);
 
   // Rotation: the token just used cannot be used a second time.
-  const reuse = await request(app).post('/auth/refresh').send({ refreshToken: originalRefreshToken });
+  const reuse = await refresh(originalRefreshToken);
   assert.equal(reuse.status, 401);
 });
 
-test('POST /auth/logout revokes the supplied refresh token', async () => {
+test('POST /auth/logout revokes the refresh cookie and clears it', async () => {
   const user = await createUser('logout-revokes-refresh');
   const refreshTokenService = require('../src/services/refreshTokenService');
   const refreshToken = await refreshTokenService.issueRefreshToken(user.id);
@@ -103,10 +124,11 @@ test('POST /auth/logout revokes the supplied refresh token', async () => {
   const logoutRes = await request(app)
     .post('/auth/logout')
     .set('Authorization', `Bearer ${user.token}`)
-    .send({ refreshToken });
+    .set('Cookie', `refreshToken=${refreshToken}`);
   assert.equal(logoutRes.status, 204);
+  assert.match(refreshCookieFrom(logoutRes), /^refreshToken=;/);
 
-  const refreshAfterLogout = await request(app).post('/auth/refresh').send({ refreshToken });
+  const refreshAfterLogout = await refresh(refreshToken);
   assert.equal(refreshAfterLogout.status, 401);
 });
 

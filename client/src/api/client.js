@@ -2,10 +2,14 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-const apiClient = axios.create({ baseURL: API_BASE_URL });
+const apiClient = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
+let accessToken = null;
+
+export function setAccessToken(token) {
+  accessToken = token;
+}
 
 apiClient.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem('accessToken');
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -14,17 +18,22 @@ apiClient.interceptors.request.use((config) => {
 
 let refreshPromise = null;
 
-async function refreshAccessToken() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new Error('No refresh token available');
-
-  // A plain axios call, not apiClient: going through apiClient's own
-  // response interceptor here would risk this failing 401 re-triggering the
-  // very refresh flow it is part of.
-  const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-  localStorage.setItem('accessToken', res.data.accessToken);
-  localStorage.setItem('refreshToken', res.data.refreshToken);
-  return res.data.accessToken;
+export function refreshAccessToken() {
+  // A plain axios call, not apiClient: going through apiClient's own response
+  // interceptor here would let a failing refresh re-trigger itself.
+  refreshPromise ||= axios
+    .post(`${API_BASE_URL}/auth/refresh`, null, {
+      withCredentials: true,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then((res) => {
+      accessToken = res.data.accessToken;
+      return accessToken;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
 }
 
 apiClient.interceptors.response.use(
@@ -36,19 +45,14 @@ apiClient.interceptors.response.use(
     if (response?.status === 401 && config && !config._retried && !isRefreshCall) {
       config._retried = true;
       try {
-        refreshPromise ||= refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
-        const newAccessToken = await refreshPromise;
+        const newAccessToken = await refreshAccessToken();
         config.headers.Authorization = `Bearer ${newAccessToken}`;
         return apiClient(config);
       } catch {
-        // The refresh token itself is invalid or revoked — there is nothing
-        // left to retry with. Clearing here (rather than in AuthContext)
-        // means every caller sees the same clean, signed-out state
-        // immediately, not just the one that happened to trigger this.
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // The refresh cookie itself is invalid or revoked, so there is nothing
+        // left to retry with. Signing out here means every caller sees the same
+        // clean state, not just the one that triggered this.
+        accessToken = null;
         window.dispatchEvent(new Event('auth:signout'));
       }
     }

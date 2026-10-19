@@ -1,23 +1,37 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import apiClient, { API_BASE_URL } from '../api/client';
+import apiClient, { API_BASE_URL, refreshAccessToken, setAccessToken } from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('accessToken'));
+  const [token, setToken] = useState(null);
+  const [restoring, setRestoring] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading: loading } = useQuery({
+  useEffect(() => {
+    let cancelled = false;
+    refreshAccessToken()
+      .then((newToken) => {
+        if (!cancelled) setToken(newToken);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setRestoring(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['me', token],
     queryFn: async () => {
       try {
         return (await apiClient.get('/api/me')).data.user;
       } catch (err) {
-        // If the access token is invalid or expired, clear it and the refresh token from localStorage and reset the token state.
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        setAccessToken(null);
         setToken(null);
         throw err;
       }
@@ -36,28 +50,21 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:signout', handleSignout);
   }, [queryClient]);
 
-  function login(accessToken, refreshToken) {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    setToken(accessToken);
-    setSessionExpired(false);
-  }
-
   async function logout() {
-    const refreshToken = localStorage.getItem('refreshToken');
     try {
-      await apiClient.post('/auth/logout', { refreshToken });
+      await apiClient.post('/auth/logout');
     } catch (err) {
-      console.error('Could not revoke Google access on logout:', err.message);
+      console.error('Could not revoke access on logout:', err.message);
     }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    setAccessToken(null);
     setToken(null);
     queryClient.clear();
   }
 
+  const loading = restoring || userLoading;
+
   return (
-    <AuthContext.Provider value={{ token, user: user || null, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user: user || null, loading, logout }}>
       {children}
       {sessionExpired && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
