@@ -2,14 +2,11 @@
 
 [![CI](https://github.com/bahaseline/customisable-cloud-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/bahaseline/customisable-cloud-frontend/actions/workflows/ci.yml)
 
-A web app that lets you organise your Google Drive files into custom lists,
-label them with colours, and share those lists with other people.
+This project presents a web-based system where users can create their own list of Google Drive files, color-code these lists as per their choice, and then share these lists with other users.
 
-It does not store or copy any files. It only saves which Drive file you picked,
-so the same file can be in more than one list without being duplicated.
+In this project, files are neither stored nor duplicated because only the IDs of the chosen Drive files are stored, and thus the same file can be present in multiple lists without duplication.
 
-MSc Web & Mobile Development dissertation project, CITY College / University of
-York Europe Campus.
+Dissertation project for MSc Web & Mobile Development program at CITY College/University of York Europe Campus.
 
 ## Features
 
@@ -17,19 +14,20 @@ York Europe Campus.
 - Coloured labels (tags) you can filter by
 - Sharing with viewer or editor permissions
 - Search inside a list or across all files
-- Preview PDFs, images and Google Docs in the app
+- Preview PDFs, images and Google Docs, Sheets, Slides and Drawings in the app
 
 ## Tech stack
 
 - Client: React + Vite, TanStack Query, Tailwind CSS
 - Server: Node.js + Express
 - Database: PostgreSQL (no ORM, plain SQL)
-- Auth: Google OAuth2 + JWT
+- Auth: Google OAuth2 + JWT (access token kept in memory, refresh token in an httpOnly cookie)
 - Files: Google Drive API
+- Rate limiting: in memory, or Redis (optional)
 
 ## Setup
 
-You need Node 20+, PostgreSQL 14+ and a Google account.
+You need Node 22+ (run `nvm use` to pick it up from `.nvmrc`), PostgreSQL 14+ and a Google account.
 
 ### 1. Install dependencies
 
@@ -76,6 +74,8 @@ openssl rand -hex 32    # JWT_SECRET
 openssl rand -hex 32    # TOKEN_ENCRYPTION_KEY
 ```
 
+`REDIS_URL` is optional. Leave it out to run with an in-memory rate limiter.
+
 ### 5. Create the tables
 
 ```bash
@@ -98,13 +98,16 @@ Then open http://localhost:3000 and sign in with Google.
 ## Tests and linting
 
 ```bash
-npm run check    # lint + tests
-npm run lint     # lint only
-npm test         # tests only
+npm run check              # lint + backend tests
+npm run lint               # lint only
+npm test                   # backend tests only
+cd client && npm test      # frontend tests
 ```
 
-There are 44 backend tests. They use the `ista1_test` database and clear it
+There are 47 backend tests. They use the `ista1_test` database and clear it
 before each run, so the normal database is not affected.
+
+There are 40 frontend tests, written with Vitest and Testing Library.
 
 ## Project structure
 
@@ -115,14 +118,18 @@ server/src
   controllers/  read the request, send the response
   services/     the logic, the SQL and the Google Drive calls
   db/           connection and schema
+  config/       env, Passport and Redis setup
   constants/    role names
+  utils/        small helpers
 
 client/src
   pages/        one file per screen
   components/   only the UI
   hooks/        state and logic
-  context/      login state and theme
+  context/      login state, theme, toasts, confirm dialogs, query client
   api/          axios setup
+  constants/    roles, tag colours, visibility options
+  utils/        small helpers
 ```
 
 Requests always go through the same path:
@@ -139,30 +146,15 @@ are in hooks, and TanStack Query handles the data coming from the server.
 
 ## Some design decisions
 
-**Short-lived access tokens, revocable refresh tokens.** After Google login the
-user gets a 15-minute JWT access token plus a long-lived refresh token, only
-the hash of which is stored server-side. Logging out revokes it (and the
-underlying Google grant), which a stateless JWT alone could never support.
-The Drive tokens are encrypted before being saved in the database.
+Access tokens are short-lived and are accompanied by refresh tokens. After logging in through Google, a 15-minute JSON Web Token (JWT) is received from the service along with a refresh token which is long-lived but whose hash value is stored in the database. Logout causes the revocation of both refresh token and the underlying Google OAuth2 grant, which is not possible to do using only a stateless JWT. Drive access tokens are encrypted before saving to the database.
 
-**Permissions are checked on the server.** The UI hides buttons but that is not
-the real protection, the middleware is. If a list is not shared with you the API
-returns 404 instead of 403, because a 403 would tell you the list exists.
+Authorization checks in the middleware. Interface controls are just aesthetic hiding buttons; real authorization happens in the middleware layer. When the list is not accessible by the user requesting access, the API returns a 404 status instead of 403 status, since the 403 status would indicate the presence of the list.
 
-**Tags are private by default, shareable on purpose.** Like Gmail labels, a tag
-you create is only ever visible to you — unless you mark it shared, in which
-case it becomes visible to anyone who can see a file you've tagged with it.
-Sharing isn't tied to a particular list, it's a property of the tag itself.
+Tags are private by default and shareable by design. In similarity to Gmail labels, the user tags are only visible to the creator unless the tag is explicitly made shareable; in this case, it is visible to all users able to view a file with such a tag. Shareable tag status is a property of the tag, not of any particular list.
 
-**File preview goes through the server.** Google's preview needs a cookie that
-an iframe cannot send, so private files showed a login screen. Now the server
-downloads the file with its own token and sends it to the browser.
+Server-based preview for files. To display file content using Google's preview functionality, it is necessary to provide a cookie, which the iframe does not have. The current solution uses the server to fetch the file content using the token and sends it to the client.
 
-**Rate limiting is shared across instances when Redis is configured.** Without
-`REDIS_URL` set, each server process counts requests in its own memory, so
-running more than one instance behind a load balancer would let a client get
-away with more requests than intended. Setting `REDIS_URL` moves the counters
-into Redis so every instance enforces the same limit.
+Rate limiting is performed centrally if Redis is enabled. Without setting REDIS_URL parameter, each instance of the application uses in-memory counter, so multi-server deployments behind the load balancer can exceed the maximum number of requests. When REDIS_URL is specified, counters are saved in Redis.
 
 ## Limitations
 
